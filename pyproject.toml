@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "outlook-mcp"
+name = "outlook-mcp-com"
 version = "0.1.0"
 description = "MCP server controlling Microsoft Outlook desktop via the Win32 COM API"
 readme = "README.md"
