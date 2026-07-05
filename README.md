@@ -1,4 +1,4 @@
-# outlook-mcp
+# outlook-mcp-com
 
 An [MCP](https://modelcontextprotocol.io) server that lets Claude (or any MCP
 client) control **Microsoft Outlook desktop on Windows** through the Win32 COM
@@ -6,15 +6,22 @@ API — read and send email, manage your calendar, save attachments, and work
 with tasks and notes, all against the Outlook profile you are already signed
 in to. No Azure app registration, no Graph API tokens.
 
-## Requirements
+## ⚠️ Requirements & Limitations
 
-- **Windows** with **classic Outlook desktop** installed and a configured
-  mail profile.
-  > ⚠️ The "new Outlook" (`olk.exe`) does **not** expose a COM API and will
-  > not work. You need classic Outlook (Microsoft 365 / Office 2016+).
-- **Python 3.10+**
-- The server only *runs* on Windows; the test suite runs anywhere (COM access
-  is mocked).
+**This package is Windows-only and requires:**
+- **Windows 10 or Windows 11** (classic Outlook COM API support)
+- **Python 3.10, 3.11, 3.12, or 3.13**
+- **Classic Outlook desktop** (Microsoft 365 / Office 2016+)
+  > The "new Outlook" (`olk.exe`) does **not** expose a COM API and will
+  > not work with this server.
+- A configured Outlook mail profile with your account already signed in.
+
+**Not supported:**
+- macOS, Linux, or other Unix-like systems
+- The new Outlook (UWP/Store app)
+- Outlook Web Access (OWA) or cloud-only accounts
+- The test suite runs on any OS (COM calls are mocked), but the actual server
+  only works on Windows.
 
 ## Installation
 
@@ -27,6 +34,24 @@ pip install .
 This installs the `outlook-mcp` console command (and `pywin32` on Windows).
 
 ## Hooking it up to Claude
+
+**As a Claude Code plugin** (recommended for Claude Code) — this repo is itself a
+plugin (`.claude-plugin/plugin.json`) that registers the `outlook` MCP server
+for you. After `pip install .` (above), either:
+
+```bash
+# Try it locally without installing anything into Claude Code's config:
+claude --plugin-dir /path/to/outlook-mcp
+
+# Or install it properly, from a local checkout or directly from GitHub:
+claude plugin install outlook-mcp@/path/to/outlook-mcp
+claude plugin install outlook-mcp@github.com/adamkopelman/outlook-mcp
+```
+
+The plugin launches the server as `python -m outlook_mcp` rather than via the
+`outlook-mcp` console script, so it works even if pip's script directory isn't
+on `PATH` — it just needs `outlook_mcp` importable by whichever `python` is
+first on `PATH`.
 
 **Claude Desktop** — add to `%APPDATA%\Claude\claude_desktop_config.json`:
 
@@ -53,7 +78,7 @@ If `outlook-mcp` isn't on PATH, use the full interpreter instead:
 }
 ```
 
-**Claude Code:**
+**Claude Code (manual, without the plugin):**
 
 ```bash
 claude mcp add outlook -- outlook-mcp

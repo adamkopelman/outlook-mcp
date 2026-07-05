@@ -1,0 +1,65 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [master, main, claude/**]
+    tags: ['v*']
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: pip install -e .[dev] --no-warn-script-location
+      - name: Run pytest
+        run: pytest -v --tb=short
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install build tools
+        run: pip install build
+      - name: Build Python package (wheel + sdist)
+        run: python -m build
+      - name: Verify wheel and sdist were both produced
+        run: |
+          ls -lh dist/
+          test -n "$(find dist -maxdepth 1 -name '*.whl')" || { echo "No wheel produced in dist/"; exit 1; }
+          test -n "$(find dist -maxdepth 1 -name '*.tar.gz')" || { echo "No sdist produced in dist/"; exit 1; }
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: pypi
+      url: https://pypi.org/project/outlook-mcp/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

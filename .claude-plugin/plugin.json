@@ -1,0 +1,20 @@
+{
+  "name": "outlook-mcp",
+  "displayName": "Outlook MCP Server",
+  "version": "0.1.0",
+  "description": "Control Microsoft Outlook desktop on Windows (mail, calendar, tasks, notes) via the Win32 COM API",
+  "author": {
+    "name": "Adam Kopelman",
+    "email": "adamkopelman2@gmail.com"
+  },
+  "homepage": "https://github.com/adamkopelman/outlook-mcp",
+  "repository": "https://github.com/adamkopelman/outlook-mcp",
+  "license": "MIT",
+  "keywords": ["outlook", "mcp", "windows", "com", "pywin32", "email", "calendar"],
+  "mcpServers": {
+    "outlook": {
+      "command": "python",
+      "args": ["-m", "outlook_mcp"]
+    }
+  }
+}
