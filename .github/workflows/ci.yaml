@@ -36,8 +36,10 @@ jobs:
           python-version: '3.11'
       - name: Install build tools
         run: pip install build
-      - name: Build package
+      - name: Build Python package (wheel + sdist)
         run: python -m build
+      - name: Verify distribution files
+        run: ls -lh dist/
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
