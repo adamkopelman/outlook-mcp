@@ -19,9 +19,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
-        run: pip install -e .[dev]
+        run: pip install -e .[dev] --no-warn-script-location
       - name: Run pytest
-        run: pytest -v
+        run: pytest -v --tb=short
 
   build:
     needs: test
@@ -34,8 +34,13 @@ jobs:
           python-version: '3.11'
       - name: Install build tools
         run: pip install build
-      - name: Build package
+      - name: Build Python package (wheel + sdist)
         run: python -m build
+      - name: Verify wheel and sdist were both produced
+        run: |
+          ls -lh dist/
+          test -n "$(find dist -maxdepth 1 -name '*.whl')" || { echo "No wheel produced in dist/"; exit 1; }
+          test -n "$(find dist -maxdepth 1 -name '*.tar.gz')" || { echo "No sdist produced in dist/"; exit 1; }
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

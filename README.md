@@ -1,4 +1,4 @@
-# outlook-mcp
+# outlook-mcp-com
 
 An [MCP](https://modelcontextprotocol.io) server that lets Claude (or any MCP
 client) control **Microsoft Outlook desktop on Windows** through the Win32 COM
@@ -6,15 +6,22 @@ API — read and send email, manage your calendar, save attachments, and work
 with tasks and notes, all against the Outlook profile you are already signed
 in to. No Azure app registration, no Graph API tokens.
 
-## Requirements
+## ⚠️ Requirements & Limitations
 
-- **Windows** with **classic Outlook desktop** installed and a configured
-  mail profile.
-  > ⚠️ The "new Outlook" (`olk.exe`) does **not** expose a COM API and will
-  > not work. You need classic Outlook (Microsoft 365 / Office 2016+).
-- **Python 3.10+**
-- The server only *runs* on Windows; the test suite runs anywhere (COM access
-  is mocked).
+**This package is Windows-only and requires:**
+- **Windows 10 or Windows 11** (classic Outlook COM API support)
+- **Python 3.10, 3.11, 3.12, or 3.13**
+- **Classic Outlook desktop** (Microsoft 365 / Office 2016+)
+  > The "new Outlook" (`olk.exe`) does **not** expose a COM API and will
+  > not work with this server.
+- A configured Outlook mail profile with your account already signed in.
+
+**Not supported:**
+- macOS, Linux, or other Unix-like systems
+- The new Outlook (UWP/Store app)
+- Outlook Web Access (OWA) or cloud-only accounts
+- The test suite runs on any OS (COM calls are mocked), but the actual server
+  only works on Windows.
 
 ## Installation
 
