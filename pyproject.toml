@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "outlook-mcp-com"
-version = "0.1.2"
+version = "0.1.3"
 description = "MCP server controlling Microsoft Outlook desktop via the Win32 COM API"
 readme = "README.md"
 license = { file = "LICENSE" }

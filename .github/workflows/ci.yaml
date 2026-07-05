@@ -25,26 +25,32 @@ jobs:
 
   build:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
       - name: Install build tools
         run: pip install build
-      - name: Build Python package (wheel + sdist)
-        run: python -m build
-      - name: Verify wheel and sdist were both produced
+      - name: Build wheel (Windows-only, platform-specific)
+        run: python -m build --wheel
+      - name: Build sdist (once)
+        if: matrix.python-version == '3.11'
+        run: python -m build --sdist
+      - name: Verify wheel was produced
+        shell: bash
         run: |
           ls -lh dist/
           test -n "$(find dist -maxdepth 1 -name '*.whl')" || { echo "No wheel produced in dist/"; exit 1; }
-          test -n "$(find dist -maxdepth 1 -name '*.tar.gz')" || { echo "No sdist produced in dist/"; exit 1; }
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: dist-${{ matrix.python-version }}
           path: dist/
 
   publish:
@@ -59,7 +65,10 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: dist
+          pattern: dist-*
           path: dist/
+          merge-multiple: true
+      - name: List files to publish
+        run: ls -lh dist/
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
