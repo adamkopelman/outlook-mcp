@@ -15,7 +15,7 @@ Full parity with the existing Python tool surface: every tool in
 parameters, same JSON return shapes, so existing MCP client configs/prompts
 work unmodified against either server.
 
-Tool groups (24 tools total, mirroring `outlook_mcp/outlook/client.py`):
+Tool groups (21 tools total, mirroring `outlook_mcp/outlook/client.py`):
 
 - **Email**: list_folders, list_emails, search_emails, get_email, send_email,
   create_draft, reply_email, move_email, delete_email
