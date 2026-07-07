@@ -67,7 +67,7 @@ working, tested software on its own and can be released before the next is start
 
 - [x] Plan 1 — Foundations (`2026-07-07-outlook-mcp-v2-plan-01-foundations.md`)
 - [x] Plan 2 — Email finder (2026-07-07-outlook-mcp-v2-plan-02-email-finder.md)
-- [ ] Plan 3 — Compose attachments
+- [x] Plan 3 — Compose attachments (plan-03)
 - [ ] Plan 4 — Meeting-aware get_email
 - [ ] Plan 5 — update_email
 - [ ] Plan 6 — Calendar finder
