@@ -26,7 +26,7 @@ Plan map + shared conventions: `docs/superpowers/plans/2026-07-07-outlook-mcp-v2
 - [x] Plan 2 — Email finder (shipped, main)
 - [x] Plan 3 — Compose attachments (shipped, main)
 - [x] Plan 4 — Meeting-aware get_email (shipped, main; commits 1314d2b..ba5145e, live-verified)
-- [x] Plan 5 — update_email (absorbs move_email) — DONE, commits 40f800a..0824ccf, live-verified (flag is manual-only: MarkAsTask rejects drafts). **PUSH PENDING user authorization.**
+- [x] Plan 5 — update_email (absorbs move_email) — shipped, main; commits 40f800a..0824ccf, live-verified (flag is manual-only: MarkAsTask rejects drafts)
 - [ ] Plan 6 — Calendar finder (list_events filters + calendar_of; enrich get_event) — **NEXT ACTION: write the Plan 6 doc from the spec + index (superpowers:writing-plans), then execute task-by-task.**
 - [ ] Plan 7 — create_event enhancements (attendee tiers, categories, show_as, send flag; NO recurrence)
 - [ ] Plan 8 — update_event + delete_event
