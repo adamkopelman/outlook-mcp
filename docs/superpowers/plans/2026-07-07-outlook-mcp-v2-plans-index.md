@@ -69,7 +69,7 @@ working, tested software on its own and can be released before the next is start
 - [x] Plan 2 — Email finder (2026-07-07-outlook-mcp-v2-plan-02-email-finder.md)
 - [x] Plan 3 — Compose attachments (plan-03)
 - [x] Plan 4 — Meeting-aware get_email (plan-04)
-- [ ] Plan 5 — update_email
+- [x] Plan 5 — update_email (2026-07-07-outlook-mcp-v2-plan-05-update-email.md) — DONE (push pending auth)
 - [ ] Plan 6 — Calendar finder
 - [ ] Plan 7 — create_event enhancements
 - [ ] Plan 8 — update_event + delete_event

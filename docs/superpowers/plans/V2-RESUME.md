@@ -25,9 +25,9 @@ Plan map + shared conventions: `docs/superpowers/plans/2026-07-07-outlook-mcp-v2
 - [x] Plan 1 — Foundations (shipped, main)
 - [x] Plan 2 — Email finder (shipped, main)
 - [x] Plan 3 — Compose attachments (shipped, main)
-- [~] Plan 4 — Meeting-aware get_email — Tasks 1 & 2 committed (HEAD 502d1a3). **NEXT ACTION: Task 3** (add the `#[ignore]`d live test from `plan-04` §Task 3; brief already extracted at `outlook-mcp-rs/.superpowers/sdd/v2p4-task-3-brief.md`), then push Plan 4 to main.
-- [ ] Plan 5 — update_email (absorbs move_email)
-- [ ] Plan 6 — Calendar finder (list_events filters + calendar_of; enrich get_event)
+- [x] Plan 4 — Meeting-aware get_email (shipped, main; commits 1314d2b..ba5145e, live-verified)
+- [x] Plan 5 — update_email (absorbs move_email) — DONE, commits 40f800a..0824ccf, live-verified (flag is manual-only: MarkAsTask rejects drafts). **PUSH PENDING user authorization.**
+- [ ] Plan 6 — Calendar finder (list_events filters + calendar_of; enrich get_event) — **NEXT ACTION: write the Plan 6 doc from the spec + index (superpowers:writing-plans), then execute task-by-task.**
 - [ ] Plan 7 — create_event enhancements (attendee tiers, categories, show_as, send flag; NO recurrence)
 - [ ] Plan 8 — update_event + delete_event
 - [ ] Plan 9 — Recurrence (heavy; create/update event via GetRecurrencePattern)
