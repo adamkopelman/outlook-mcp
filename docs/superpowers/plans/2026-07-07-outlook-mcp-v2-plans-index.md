@@ -71,7 +71,7 @@ working, tested software on its own and can be released before the next is start
 - [x] Plan 4 — Meeting-aware get_email (plan-04)
 - [x] Plan 5 — update_email (2026-07-07-outlook-mcp-v2-plan-05-update-email.md) — shipped to main
 - [x] Plan 6 — Calendar finder (2026-07-07-outlook-mcp-v2-plan-06-calendar-finder.md) — shipped to main
-- [ ] Plan 7 — create_event enhancements
+- [ ] Plan 7 — create_event enhancements (2026-07-07-outlook-mcp-v2-plan-07-create-event-enhancements.md) — doc written, executing
 - [ ] Plan 8 — update_event + delete_event
 - [ ] Plan 9 — Recurrence
 - [ ] Plan 10 — check_availability
