@@ -27,8 +27,8 @@ Plan map + shared conventions: `docs/superpowers/plans/2026-07-07-outlook-mcp-v2
 - [x] Plan 3 — Compose attachments (shipped, main)
 - [x] Plan 4 — Meeting-aware get_email (shipped, main; commits 1314d2b..ba5145e, live-verified)
 - [x] Plan 5 — update_email (absorbs move_email) — shipped, main; commits 40f800a..0824ccf, live-verified (flag is manual-only: MarkAsTask rejects drafts)
-- [ ] Plan 6 — Calendar finder (list_events filters + calendar_of; enrich get_event) — **NEXT ACTION: write the Plan 6 doc from the spec + index (superpowers:writing-plans), then execute task-by-task.**
-- [ ] Plan 7 — create_event enhancements (attendee tiers, categories, show_as, send flag; NO recurrence)
+- [x] Plan 6 — Calendar finder (list_events filters + calendar_of; enrich get_event) — shipped, main; commits 0824ccf..c662592, live-verified (event_matches unit-tested, 0 warnings)
+- [ ] Plan 7 — create_event enhancements (attendee tiers, categories, show_as, send flag; NO recurrence) — **NEXT ACTION: write the Plan 7 doc from the spec + index (superpowers:writing-plans), then execute task-by-task.**
 - [ ] Plan 8 — update_event + delete_event
 - [ ] Plan 9 — Recurrence (heavy; create/update event via GetRecurrencePattern)
 - [ ] Plan 10 — check_availability (free/busy)
@@ -38,3 +38,4 @@ Plan map + shared conventions: `docs/superpowers/plans/2026-07-07-outlook-mcp-v2
 ## Notes captured in durable artifacts (not just chat)
 - All brainstorm decisions → the committed spec.
 - `friendly.rs` (enum↔word), `com::get_item_categories`/`set_item_categories`, `EmailQuery` struct, `attach_files`, `MeetingInfo` + `item_type_from_class`/`meeting_type_from_class` all exist in the code as of HEAD 502d1a3.
+- `EventQuery` struct, `event_matches` client-side filter, `calendar_of` (CreateRecipient/Resolve/GetSharedDefaultFolder) all exist in the code as of HEAD c662592.
