@@ -30,7 +30,7 @@ Plan map + shared conventions: `docs/superpowers/plans/2026-07-07-outlook-mcp-v2
 - [x] Plan 6 — Calendar finder (list_events filters + calendar_of; enrich get_event) — shipped, main; commits 0824ccf..c662592, live-verified (event_matches unit-tested, 0 warnings)
 - [x] Plan 7 — create_event enhancements (attendee tiers, categories, show_as, send flag; NO recurrence) — shipped, main; commits 04838f7..5abd1af, final review Ready-to-merge-Yes (1 known cross-task Minor: duplicate recipients if an address appears in overlapping tiers/alias, not fixed)
 - [x] Plan 8 — update_event + delete_event (attendee add/remove, show_as/categories/reminder/all_day edits, organizer-cancel delete) — shipped, main; commits 6c4b7cc..61c65ec, final review Ready-to-merge-Yes (3 known cosmetic Minors, none fixed: changed[] empty-tier sibling dependency, fake delete_event omits subject key, one live-test send_cancellation could be false instead of true)
-- [ ] Plan 9 — Recurrence (heavy; create/update event via GetRecurrencePattern) — **NEXT ACTION: write the Plan 9 doc from the spec + index (superpowers:writing-plans), then execute task-by-task.**
+- [ ] Plan 9 — Recurrence (heavy; create/update event via GetRecurrencePattern) — doc written (plan-09), 5 tasks — **NEXT ACTION: execute task-by-task via subagent-driven-development.**
 - [ ] Plan 10 — check_availability (free/busy)
 - [ ] Plan 11 — Tasks CRUD (list filters, create additions, update_task[absorbs complete_task], delete_task)
 - [ ] Plan 12 — Notes CRUD (list filters, get fields, create additions, update_note, delete_note)
