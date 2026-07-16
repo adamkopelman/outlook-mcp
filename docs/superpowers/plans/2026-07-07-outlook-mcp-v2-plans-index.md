@@ -74,7 +74,7 @@ working, tested software on its own and can be released before the next is start
 - [x] Plan 7 — create_event enhancements (2026-07-07-outlook-mcp-v2-plan-07-create-event-enhancements.md) — shipped to main
 - [x] Plan 8 — update_event + delete_event (2026-07-07-outlook-mcp-v2-plan-08-update-delete-event.md) — shipped to main
 - [x] Plan 9 — Recurrence (2026-07-07-outlook-mcp-v2-plan-09-recurrence.md) — shipped to main
-- [ ] Plan 10 — check_availability
+- [ ] Plan 10 — check_availability (2026-07-07-outlook-mcp-v2-plan-10-check-availability.md) — executing
 - [ ] Plan 11 — Tasks CRUD
 - [ ] Plan 12 — Notes CRUD
 
