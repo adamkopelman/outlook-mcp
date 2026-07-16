@@ -76,7 +76,7 @@ working, tested software on its own and can be released before the next is start
 - [x] Plan 9 — Recurrence (2026-07-07-outlook-mcp-v2-plan-09-recurrence.md) — shipped to main
 - [x] Plan 10 — check_availability (2026-07-07-outlook-mcp-v2-plan-10-check-availability.md) — shipped to main
 - [x] Plan 11 — Tasks CRUD (2026-07-07-outlook-mcp-v2-plan-11-tasks-crud.md) — shipped to main
-- [ ] Plan 12 — Notes CRUD
+- [ ] Plan 12 — Notes CRUD (2026-07-07-outlook-mcp-v2-plan-12-notes-crud.md) — executing
 
 (Plans are generated on request, one at a time, so each gets full bite-sized-TDD
 detail rather than rushed placeholders.)
