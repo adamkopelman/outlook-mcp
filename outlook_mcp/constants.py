@@ -50,6 +50,25 @@ OL_IMPORTANCE_LOW = 0
 OL_IMPORTANCE_NORMAL = 1
 OL_IMPORTANCE_HIGH = 2
 
+# OlBusyStatus (AppointmentItem.BusyStatus)
+OL_FREE = 0
+OL_TENTATIVE = 1
+OL_BUSY = 2
+OL_OUT_OF_OFFICE = 3
+OL_WORKING_ELSEWHERE = 4
+
+# OlTaskStatus (full set — OL_TASK_NOT_STARTED/IN_PROGRESS/COMPLETE already exist above)
+OL_TASK_WAITING = 3
+OL_TASK_DEFERRED = 4
+
+# OlResponseStatus (AppointmentItem.ResponseStatus)
+OL_RESPONSE_NONE = 0
+OL_RESPONSE_ORGANIZED = 1
+OL_RESPONSE_TENTATIVE = 2
+OL_RESPONSE_ACCEPTED = 3
+OL_RESPONSE_DECLINED = 4
+OL_RESPONSE_NOT_RESPONDED = 5
+
 # Friendly folder names accepted by tools, mapped to default folder ids.
 FOLDER_NAME_TO_ID = {
     "inbox": OL_FOLDER_INBOX,
