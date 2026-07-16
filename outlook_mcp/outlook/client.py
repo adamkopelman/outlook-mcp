@@ -166,6 +166,7 @@ class WindowsOutlookClient(OutlookClientBase):
             "received": _to_iso(getattr(item, "ReceivedTime", None)),
             "unread": bool(getattr(item, "UnRead", False)),
             "has_attachments": bool(attachments and attachments.Count > 0),
+            "categories": _get_item_categories(item),
         }
 
     def _event_summary(self, item) -> dict:
@@ -179,6 +180,7 @@ class WindowsOutlookClient(OutlookClientBase):
             "all_day": bool(getattr(item, "AllDayEvent", False)),
             "is_recurring": bool(getattr(item, "IsRecurring", False)),
             "is_meeting": getattr(item, "MeetingStatus", c.OL_NONMEETING) != c.OL_NONMEETING,
+            "categories": _get_item_categories(item),
         }
 
     def _task_summary(self, item) -> dict:
@@ -189,6 +191,7 @@ class WindowsOutlookClient(OutlookClientBase):
             "complete": bool(getattr(item, "Complete", False)),
             "status": getattr(item, "Status", c.OL_TASK_NOT_STARTED),
             "importance": getattr(item, "Importance", c.OL_IMPORTANCE_NORMAL),
+            "categories": _get_item_categories(item),
         }
 
     def _note_summary(self, item) -> dict:
@@ -198,6 +201,7 @@ class WindowsOutlookClient(OutlookClientBase):
             "id": self._make_id(item),
             "subject": first_line[:120],
             "created": _to_iso(getattr(item, "CreationTime", None)),
+            "categories": _get_item_categories(item),
         }
 
     # ---- Email ------------------------------------------------------

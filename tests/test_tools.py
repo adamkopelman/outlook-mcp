@@ -43,6 +43,12 @@ def test_list_emails_defaults(fake_client):
     ]
 
 
+def test_list_emails_returns_categories(fake_client):
+    content = call_tool("list_emails", {})
+    result = result_json(content)
+    assert result["categories"] == ["Work"]
+
+
 def test_search_emails(fake_client):
     call_tool("search_emails", {"query": "invoice", "since_days": 30})
     name, kwargs = fake_client.calls[0]

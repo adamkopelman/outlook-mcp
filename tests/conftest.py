@@ -33,16 +33,17 @@ class FakeOutlookClient(OutlookClientBase):
         self._record("list_emails", folder=folder, count=count,
                      unread_only=unread_only)
         return [{"id": EMAIL_ID, "subject": "Hello", "sender": "Ada",
-                 "unread": True}]
+                 "unread": True, "categories": ["Work"]}]
 
     def search_emails(self, query, folder="inbox", count=10, since_days=None):
         self._record("search_emails", query=query, folder=folder, count=count,
                      since_days=since_days)
-        return [{"id": EMAIL_ID, "subject": "Hello"}]
+        return [{"id": EMAIL_ID, "subject": "Hello", "categories": []}]
 
     def get_email(self, email_id, prefer_html=False):
         self._record("get_email", email_id=email_id, prefer_html=prefer_html)
-        return {"id": email_id, "subject": "Hello", "body": "Hi there"}
+        return {"id": email_id, "subject": "Hello", "body": "Hi there",
+                "categories": []}
 
     def send_email(self, to, subject, body, cc=None, bcc=None, html=False):
         self._record("send_email", to=to, subject=subject, body=body, cc=cc,
@@ -73,11 +74,12 @@ class FakeOutlookClient(OutlookClientBase):
     # Calendar
     def list_events(self, start_date=None, end_date=None):
         self._record("list_events", start_date=start_date, end_date=end_date)
-        return [{"id": EVENT_ID, "subject": "Standup"}]
+        return [{"id": EVENT_ID, "subject": "Standup", "categories": []}]
 
     def get_event(self, event_id):
         self._record("get_event", event_id=event_id)
-        return {"id": event_id, "subject": "Standup", "body": ""}
+        return {"id": event_id, "subject": "Standup", "body": "",
+                "categories": []}
 
     def create_event(self, subject, start, end, body=None, location=None,
                      attendees=None, all_day=False, reminder_minutes=None):
@@ -105,7 +107,8 @@ class FakeOutlookClient(OutlookClientBase):
     # Tasks
     def list_tasks(self, include_completed=False):
         self._record("list_tasks", include_completed=include_completed)
-        return [{"id": TASK_ID, "subject": "Buy milk", "complete": False}]
+        return [{"id": TASK_ID, "subject": "Buy milk", "complete": False,
+                 "categories": []}]
 
     def create_task(self, subject, body=None, due_date=None,
                     importance="normal"):
@@ -120,11 +123,12 @@ class FakeOutlookClient(OutlookClientBase):
     # Notes
     def list_notes(self):
         self._record("list_notes")
-        return [{"id": NOTE_ID, "subject": "Ideas"}]
+        return [{"id": NOTE_ID, "subject": "Ideas", "categories": []}]
 
     def get_note(self, note_id):
         self._record("get_note", note_id=note_id)
-        return {"id": note_id, "subject": "Ideas", "body": "Ideas\n- one"}
+        return {"id": note_id, "subject": "Ideas", "body": "Ideas\n- one",
+                "categories": []}
 
     def create_note(self, body):
         self._record("create_note", body=body)
