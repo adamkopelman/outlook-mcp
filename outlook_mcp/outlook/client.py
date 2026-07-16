@@ -80,6 +80,29 @@ def _safe_filename(name: str) -> str:
     return cleaned or "attachment"
 
 
+def _parse_categories(raw: str) -> list:
+    """Outlook stores categories as one ", "-joined string. Split it into
+    names, trimming whitespace and dropping empties."""
+    return [s.strip() for s in (raw or "").split(",") if s.strip()]
+
+
+def _join_categories(cats: list) -> str:
+    """Join category names back into the ", "-separated string Outlook
+    expects."""
+    return ", ".join(cats)
+
+
+def _get_item_categories(item) -> list:
+    """Read an item's color categories (empty list if the property is
+    missing or blank)."""
+    return _parse_categories(getattr(item, "Categories", "") or "")
+
+
+def _set_item_categories(item, cats: list) -> None:
+    """Overwrite an item's categories with the given list."""
+    item.Categories = _join_categories(cats)
+
+
 class WindowsOutlookClient(OutlookClientBase):
     """Talks to a running (or auto-launched) classic Outlook via COM."""
 
