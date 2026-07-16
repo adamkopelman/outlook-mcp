@@ -33,7 +33,11 @@ Plan map + shared conventions: `docs/superpowers/plans/2026-07-07-outlook-mcp-v2
 - [x] Plan 9 — Recurrence (create/update event via GetRecurrencePattern) — shipped, main; commits 61c65ec..7758c9c, live-verified (all 4 recurrence live tests pass: weekly, monthly+until, yearly+no-end, update+clear). 2 real bugs found and fixed in-session: Bug A (Outlook's yearly Interval must be in months, multiple of 12 — client.rs), Bug B (variant_to_iso_string couldn't decode VT_DATE, a pre-existing system-wide bug affecting every date field server-wide — com.rs). Final whole-branch review raised 3 Important findings (yearly interval live coverage, recurrence/clear_recurrence guard not shared with fake client, until+occurrences read-back symmetry) — all fixed and re-reviewed Approved.
 - [x] Plan 10 — check_availability (free/busy) — shipped, main; commits 7d59667..0197da3, live-verified (own-mailbox real slots + unresolvable-person-doesn't-abort both pass). Task 3 caught and fixed a real live-COM bug in Task 2's code (FreeBusy() error handling) via a raw COM probe before it was ever pushed.
 - [x] Plan 11 — Tasks CRUD (list filters, create additions, update_task[absorbs complete_task], delete_task) — shipped, main; commits 0197da3..5e17c02, live-verified. Task 3's implementer subagent hit an API session limit mid-task; controller found the work complete and uncommitted, verified it file-by-file against the brief, committed it — independently re-confirmed clean by that task's reviewer.
-- [ ] Plan 12 — Notes CRUD (list filters, get fields, create additions, update_note, delete_note) — doc written (plan-12), 5 tasks, LAST PLAN in the v2 build — **NEXT ACTION: execute task-by-task via subagent-driven-development.**
+- [x] Plan 12 — Notes CRUD (list filters, get fields, create additions, update_note, delete_note) — shipped, main; commits 5e17c02..26e9600, live-verified. LAST PLAN — the full 26-tool v2 feature set is now complete.
+
+## v2 BUILD COMPLETE (2026-07-16)
+
+All 12 plans shipped to `main`. 26 tools across Email/Calendar/Attachments/Tasks/Notes now match the spec at `docs/superpowers/specs/2026-07-07-outlook-mcp-v2-features-design.md`. Deferred follow-up (not blocking, noted by Plan 12's final review): `README.md`'s tool-count header and Calendar/Tasks sections predate several plans and are stale beyond what any single plan's scope covered — worth one consolidated sweep.
 
 ## Notes captured in durable artifacts (not just chat)
 - All brainstorm decisions → the committed spec.
