@@ -19,6 +19,7 @@ import pywintypes
 import win32com.client
 
 from outlook_mcp import constants as c
+from outlook_mcp import friendly
 from outlook_mcp.errors import ToolError, format_com_error
 from outlook_mcp.outlook.base import OutlookClientBase
 
@@ -189,8 +190,12 @@ class WindowsOutlookClient(OutlookClientBase):
             "subject": getattr(item, "Subject", "") or "",
             "due_date": _to_iso(getattr(item, "DueDate", None)),
             "complete": bool(getattr(item, "Complete", False)),
-            "status": getattr(item, "Status", c.OL_TASK_NOT_STARTED),
-            "importance": getattr(item, "Importance", c.OL_IMPORTANCE_NORMAL),
+            "status": friendly.task_status_word(
+                getattr(item, "Status", c.OL_TASK_NOT_STARTED)
+            ),
+            "importance": friendly.importance_word(
+                getattr(item, "Importance", c.OL_IMPORTANCE_NORMAL)
+            ),
             "categories": _get_item_categories(item),
         }
 
@@ -393,7 +398,9 @@ class WindowsOutlookClient(OutlookClientBase):
         info["body"] = _truncate(getattr(item, "Body", "") or "")
         info["required_attendees"] = getattr(item, "RequiredAttendees", "") or ""
         info["optional_attendees"] = getattr(item, "OptionalAttendees", "") or ""
-        info["response_status"] = getattr(item, "ResponseStatus", None)
+        info["response"] = friendly.response_word(
+            getattr(item, "ResponseStatus", c.OL_RESPONSE_NONE) or c.OL_RESPONSE_NONE
+        )
         return info
 
     @_com

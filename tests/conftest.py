@@ -79,7 +79,7 @@ class FakeOutlookClient(OutlookClientBase):
     def get_event(self, event_id):
         self._record("get_event", event_id=event_id)
         return {"id": event_id, "subject": "Standup", "body": "",
-                "categories": []}
+                "response": "accepted", "categories": []}
 
     def create_event(self, subject, start, end, body=None, location=None,
                      attendees=None, all_day=False, reminder_minutes=None):
@@ -108,6 +108,7 @@ class FakeOutlookClient(OutlookClientBase):
     def list_tasks(self, include_completed=False):
         self._record("list_tasks", include_completed=include_completed)
         return [{"id": TASK_ID, "subject": "Buy milk", "complete": False,
+                 "status": "not_started", "importance": "normal",
                  "categories": []}]
 
     def create_task(self, subject, body=None, due_date=None,
