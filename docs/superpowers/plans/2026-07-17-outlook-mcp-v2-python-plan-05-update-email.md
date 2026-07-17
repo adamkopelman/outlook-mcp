@@ -353,6 +353,8 @@ An end-to-end test against real Outlook: create a draft, update several fields, 
 **Interfaces:**
 - Consumes: real `WindowsOutlookClient.create_draft` + `update_email` + `get_email` + `delete_email`.
 
+**Known Outlook constraint (discovered and already worked around in the Rust build — see `outlook-mcp-rs/tests/live_outlook.rs:333-397` and `outlook-mcp-rs/TESTING.md:59-67`):** `MarkAsTask` (the COM method backing `flag="follow_up"`) is only valid on items that have been SENT or RECEIVED — Outlook rejects it on a draft with `"Draft items cannot be marked. MarkAsTask is only valid on items that have been sent or received."` A draft is the only safe, disposable target this automated test can create, so `flag` is deliberately NOT exercised by the automated live test below (verified manually instead — see Step 1a). Do not attempt to "fix" this by having the implementation detect draft status and skip the flag operation — a real received/sent email SHOULD honor `flag="follow_up"`, so silently no-op'ing it would hide a real capability. This is a test-scope limitation, not an implementation bug.
+
 - [ ] **Step 1: Add the live test**
 
 Add to `tests/test_live.py`, after the existing tests, using the established `client` fixture (no new skip decorator — the module-level `pytestmark` already gates the file):
@@ -367,14 +369,19 @@ def test_update_email_applies_state_then_moves(client):
     email_id = created["id"]
 
     # Apply state changes only (no move yet) so we can read them back by the same id.
+    # NOTE: `flag` is deliberately NOT exercised here. `MarkAsTask` (follow_up)
+    # is only valid on sent/received items — Outlook rejects it on a draft
+    # ("MarkAsTask is only valid on items that have been sent or received").
+    # A draft is the only safe disposable target we can create here, so flag
+    # is verified manually instead (see Step 1a below).
     res = client.update_email(
-        email_id=email_id, mark_read=True, flag="follow_up",
+        email_id=email_id, mark_read=True,
         add_categories=["Work"], importance="high",
     )
     assert res["status"] == "updated"
     assert res["id"] == email_id  # no move -> id unchanged
     assert "importance" in res["changed"]
-    assert "flag" in res["changed"]
+    assert "add_categories" in res["changed"]
 
     # Verify the category landed via the public get_email path.
     detail = client.get_email(email_id)
@@ -403,6 +410,10 @@ def test_update_email_applies_state_then_moves(client):
 ```
 (`get_email`'s returned dict, built from `_email_summary` — `client.py:170-182` — does not include an `importance` key, unlike `_task_summary`. This was confirmed by reading `client.py` directly before writing this test, not guessed. The importance assertion therefore reads `item.Importance` straight off the COM item via `client._mapi()`/`client._get_item()`, both already-existing private methods this test can call directly since it lives in the same package's test suite and other live tests already do this, e.g. the Plan 1 categories round-trip test.)
 
+- [ ] **Step 1a: Manually verify `flag` against a real sent/received email (not automated — record the result in your task report)**
+
+Pick a received email in the test mailbox (`adamkopelman2@gmail.com`'s Outlook) and call `client.update_email(email_id=<that email's id>, flag="follow_up")` — e.g. via a throwaway Python REPL snippet or an ad-hoc pytest invocation, not a permanent test file — confirm a follow-up flag appears on the item in Outlook. Repeat with `flag="complete"` (flag shows complete) and `flag="clear"` (flag removed). Report the outcome (pass/fail per value) in your task report; do not skip this step even though it produces no committed test code — it's the only coverage `flag` gets, since the automated test above cannot exercise it on a draft.
+
 - [ ] **Step 2: Confirm the plain (non-live) suite still skips it**
 
 Run: `pytest` (no env var)
@@ -427,6 +438,7 @@ git commit -m "Add live update_email round-trip test"
 
 - **Spec coverage:** `email_id` (required) ✅; `move_to` ✅ applied last, returns new id; `mark_read` true/false ✅ via `UnRead` inverse; `flag` follow_up/complete/clear ✅ via `MarkAsTask`/`FlagStatus`/`ClearTaskFlag`; `add_categories`/`remove_categories` non-destructive add/remove ✅ (read-modify-write, case-insensitive); `importance` low/normal/high ✅ via `c.IMPORTANCE_NAME_TO_ID`. Return shape + `changed` ordering (state first, move last) ✅. Retire `move_email` ✅ across base/fake/server/client/tests/registry/README.
 - **Placeholder scan:** the only placeholder is the deliberate Task 1 → Task 2 `NotImplementedError` handoff, replaced in Task 2 Step 2. Task 3's Step 1 flags one genuine unknown (whether `_email_summary` surfaces `importance`) and gives an explicit fallback rather than guessing — this is a verification instruction, not an unresolved placeholder in the shipped code.
+- **Corrected after first execution attempt:** Task 3's automated live test originally included `flag="follow_up"` in the draft-based state-change call. The first implementer dispatch hit a real Outlook COM error (`"Draft items cannot be marked. MarkAsTask is only valid on items that have been sent or received."`) — confirmed as the same constraint Rust's build already discovered and documented (`outlook-mcp-rs/tests/live_outlook.rs:333-397`, `outlook-mcp-rs/TESTING.md:59-67`). The plan was corrected to match Rust's approach: `flag` removed from the automated draft-based test, verified manually against a real received email instead (Step 1a). The `client.py` implementation itself needs no change — this is a genuine Outlook-imposed constraint on drafts, not a bug in `MarkAsTask`'s usage.
 - **Type consistency:** `update_email`'s kwarg names/defaults are identical across `base.py`/`client.py`/`conftest.py`/`server.py`. `changed` ordering is identical between the Task 1 fake and the Task 2 real client: `mark_read`, `flag`, `add_categories`, `remove_categories`, `importance`, `move_to`. `c.IMPORTANCE_NAME_TO_ID` matches the existing `constants.py` dict already used by `create_task`.
 - **Retirement completeness:** `move_email` removed from `base.py`, `client.py`, `conftest.py`, `server.py`, `test_tools.py`, `test_registry.py`'s `EXPECTED_TOOLS`, and `README.md` — no dangling references. Grep for `move_email` across the whole repo at the end of Task 1 to confirm (matching Plan 2's precedent for `search_emails` retirement).
 
