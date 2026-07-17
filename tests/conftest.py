@@ -46,7 +46,7 @@ class FakeOutlookClient(OutlookClientBase):
     def get_email(self, email_id, prefer_html=False):
         self._record("get_email", email_id=email_id, prefer_html=prefer_html)
         return {"id": email_id, "subject": "Hello", "body": "Hi there",
-                "categories": []}
+                "categories": [], "item_type": "email", "is_meeting": False}
 
     def send_email(self, to, subject, body, cc=None, bcc=None, html=False,
                    attachments=None):

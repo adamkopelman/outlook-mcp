@@ -78,6 +78,13 @@ def test_get_email(fake_client):
     assert result_json(content)["body"] == "Hi there"
 
 
+def test_get_email_includes_item_type(fake_client):
+    content = call_tool("get_email", {"email_id": EMAIL_ID})
+    result = result_json(content)
+    assert result["item_type"] == "email"
+    assert result["is_meeting"] is False
+
+
 def test_send_email(fake_client):
     call_tool("send_email", {"to": ["a@example.com", "b@example.com"],
                              "subject": "Hi", "body": "Hello!"})

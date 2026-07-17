@@ -18,3 +18,20 @@ def test_reverse_lookups_are_case_insensitive_and_reject_garbage():
     assert friendly.busy_status_to_id("nope") is None
     assert friendly.task_status_to_id("COMPLETE") == 2
     assert friendly.task_status_to_id("nope") is None
+
+
+def test_item_type_from_class():
+    assert friendly.item_type_from_class("IPM.Note") == "email"
+    assert friendly.item_type_from_class("IPM.Schedule.Meeting.Request") == "meeting"
+    assert friendly.item_type_from_class("IPM.Schedule.Meeting.Canceled") == "meeting"
+    assert friendly.item_type_from_class("REPORT.IPM.Note.NDR") == "bounce"
+    assert friendly.item_type_from_class("REPORT.IPM.Note.IPNRN") == "read_receipt"
+    assert friendly.item_type_from_class("IPM.Contact") == "other"
+    assert friendly.item_type_from_class("") == "other"
+    assert friendly.item_type_from_class(None) == "other"
+
+
+def test_meeting_type_from_class():
+    assert friendly.meeting_type_from_class("IPM.Schedule.Meeting.Request") == "request"
+    assert friendly.meeting_type_from_class("IPM.Schedule.Meeting.Canceled") == "cancellation"
+    assert friendly.meeting_type_from_class("IPM.Schedule.Meeting.Resp.Pos") == "response"

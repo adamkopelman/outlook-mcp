@@ -60,3 +60,28 @@ def busy_status_to_id(name: str) -> Optional[int]:
 
 def task_status_to_id(name: str) -> Optional[int]:
     return _TASK_STATUS_IDS.get((name or "").strip().lower())
+
+
+def item_type_from_class(message_class: str) -> str:
+    """Map an Outlook MessageClass to a coarse item type."""
+    m = (message_class or "").upper()
+    if m.startswith("IPM.SCHEDULE.MEETING"):
+        return "meeting"
+    if "NDR" in m:
+        return "bounce"
+    if m.startswith("REPORT.") and "RN" in m:
+        return "read_receipt"
+    if m.startswith("IPM.NOTE"):
+        return "email"
+    return "other"
+
+
+def meeting_type_from_class(message_class: str) -> str:
+    """Map a meeting-item MessageClass to a meeting type. Updates are
+    delivered with the same class as requests, so they map to "request"."""
+    m = (message_class or "").upper()
+    if "CANCELED" in m or "CANCELLED" in m:
+        return "cancellation"
+    if "RESP" in m:
+        return "response"
+    return "request"
