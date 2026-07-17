@@ -101,7 +101,7 @@ rigor.
 
 - [x] Plan 1 — Foundations (friendly words + categories) — shipped, main; commits 0c53f34..5ec2a0a, live-verified (categories round-trip through real Outlook via pywin32, passed first try, no VARIANT/BSTR-level quirks for this property). Established the live-test pattern (`tests/test_live.py`, `OUTLOOK_MCP_LIVE_TESTS=1` opt-in) all later plans extend.
 - [x] Plan 2 — Email finder — shipped, master; commits 0bc09e2..c1e62df. search_emails fully retired, merged into list_emails with full filter parity (query/sender/category/dates/has_attachments/flagged/high_importance) vs. Rust — Restrict-based for cheap filters, client-side for category/has_attachments. Live-verified: query filter narrows results against the real mailbox.
-- [ ] Plan 3 — Compose attachments
+- [x] Plan 3 — Compose attachments — shipped, master; commits 3051f51..72a768e. attachments param (local file paths) threaded through send_email/create_draft/reply_email via a new module-level _attach_files helper (validate-all-then-attach-all, fail-fast before any send/save). Live-verified: real draft round-trip with an attached temp file, plus a fail-fast missing-path case, both against the real mailbox.
 - [ ] Plan 4 — Meeting-aware get_email
 - [ ] Plan 5 — update_email (absorbs move_email)
 - [ ] Plan 6 — Calendar finder
