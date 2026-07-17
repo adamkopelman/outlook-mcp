@@ -331,6 +331,30 @@ class WindowsOutlookClient(OutlookClientBase):
             [attachments.Item(i).FileName for i in range(1, attachments.Count + 1)]
             if attachments and attachments.Count else []
         )
+
+        message_class = getattr(item, "MessageClass", "") or ""
+        item_type = friendly.item_type_from_class(message_class)
+        is_meeting = item_type == "meeting"
+        info["item_type"] = item_type
+        info["is_meeting"] = is_meeting
+        if is_meeting:
+            # AddToCalendar=False: reading a meeting request must never
+            # silently add it to the user's calendar as a side effect.
+            try:
+                appt = item.GetAssociatedAppointment(False)
+                info["meeting"] = {
+                    "meeting_type": friendly.meeting_type_from_class(message_class),
+                    "start": _to_iso(getattr(appt, "Start", None)),
+                    "end": _to_iso(getattr(appt, "End", None)),
+                    "location": getattr(appt, "Location", "") or "",
+                    "organizer": getattr(appt, "Organizer", "") or "",
+                    "required_attendees": getattr(appt, "RequiredAttendees", "") or "",
+                    "optional_attendees": getattr(appt, "OptionalAttendees", "") or "",
+                    "is_recurring": bool(getattr(appt, "IsRecurring", False)),
+                }
+            except pywintypes.com_error:
+                pass  # malformed meeting item: leave "meeting" absent
+
         return info
 
     def _compose(self, app, to, subject, body, cc, bcc, html):
