@@ -99,7 +99,7 @@ rigor.
 
 ## Progress
 
-- [ ] Plan 1 — Foundations (friendly words + categories)
+- [x] Plan 1 — Foundations (friendly words + categories) — shipped, main; commits 0c53f34..5ec2a0a, live-verified (categories round-trip through real Outlook via pywin32, passed first try, no VARIANT/BSTR-level quirks for this property). Established the live-test pattern (`tests/test_live.py`, `OUTLOOK_MCP_LIVE_TESTS=1` opt-in) all later plans extend.
 - [ ] Plan 2 — Email finder
 - [ ] Plan 3 — Compose attachments
 - [ ] Plan 4 — Meeting-aware get_email
