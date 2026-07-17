@@ -425,8 +425,74 @@ class WindowsOutlookClient(OutlookClientBase):
                      add_categories: Optional[list] = None,
                      remove_categories: Optional[list] = None,
                      importance: Optional[str] = None) -> dict:
-        # Real COM implementation added in Plan 5 Task 2.
-        raise NotImplementedError("update_email real COM impl — Plan 5 Task 2")
+        _, ns = self._mapi()
+        item = self._get_item(ns, email_id)
+        changed = []
+
+        # ---- state changes first (they address the item by its current id) ----
+
+        if mark_read is not None:
+            # UnRead is the inverse of "read".
+            item.UnRead = not mark_read
+            item.Save()
+            changed.append("mark_read")
+
+        if flag is not None:
+            flag_key = flag.strip().lower()
+            if flag_key == "follow_up":
+                # MarkAsTask flags for follow-up with no due date.
+                item.MarkAsTask(c.OL_MARK_NO_DATE)
+            elif flag_key == "complete":
+                item.FlagStatus = c.OL_FLAG_COMPLETE
+            elif flag_key == "clear":
+                # ClearTaskFlag removes the follow-up flag entirely.
+                item.ClearTaskFlag()
+            else:
+                raise ToolError(
+                    f"Invalid flag {flag!r}: expected 'follow_up', 'complete', "
+                    f"or 'clear'."
+                )
+            item.Save()
+            changed.append("flag")
+
+        # Categories: read the current set once, then add/remove against it,
+        # so tagging never wipes existing categories.
+        if add_categories is not None or remove_categories is not None:
+            cats = _get_item_categories(item)
+            if add_categories is not None:
+                for a in add_categories:
+                    if not any(existing.lower() == a.lower() for existing in cats):
+                        cats.append(a)
+                changed.append("add_categories")
+            if remove_categories is not None:
+                wanted = {r.lower() for r in remove_categories}
+                cats = [c_ for c_ in cats if c_.lower() not in wanted]
+                changed.append("remove_categories")
+            _set_item_categories(item, cats)
+            item.Save()
+
+        if importance is not None:
+            importance_key = importance.strip().lower()
+            if importance_key not in c.IMPORTANCE_NAME_TO_ID:
+                raise ToolError(
+                    f"Invalid importance {importance!r}: use 'low', 'normal' "
+                    f"or 'high'."
+                )
+            item.Importance = c.IMPORTANCE_NAME_TO_ID[importance_key]
+            item.Save()
+            changed.append("importance")
+
+        # ---- move last (Move changes the EntryID) ----
+
+        if move_to is not None:
+            target = self._resolve_folder(ns, move_to)
+            moved = item.Move(target)
+            changed.append("move_to")
+            new_id = self._make_id(moved)  # EntryID changed — return the new id.
+        else:
+            new_id = email_id
+
+        return {"status": "updated", "id": new_id, "changed": changed}
 
     @_com
     def delete_email(self, email_id: str) -> dict:

@@ -50,6 +50,14 @@ OL_IMPORTANCE_LOW = 0
 OL_IMPORTANCE_NORMAL = 1
 OL_IMPORTANCE_HIGH = 2
 
+# OlFlagStatus (MailItem.FlagStatus)
+OL_NO_FLAG = 0
+OL_FLAG_COMPLETE = 1
+OL_FLAG_MARKED = 2
+
+# OlMarkInterval (MailItem.MarkAsTask)
+OL_MARK_NO_DATE = 0
+
 # OlBusyStatus (AppointmentItem.BusyStatus)
 OL_FREE = 0
 OL_TENTATIVE = 1
