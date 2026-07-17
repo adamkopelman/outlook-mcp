@@ -47,7 +47,12 @@ class OutlookClientBase:
                     attachments: Optional[list] = None) -> dict:
         raise NotImplementedError
 
-    def move_email(self, email_id: str, target_folder: str) -> dict:
+    def update_email(self, email_id: str, move_to: Optional[str] = None,
+                     mark_read: Optional[bool] = None,
+                     flag: Optional[str] = None,
+                     add_categories: Optional[list] = None,
+                     remove_categories: Optional[list] = None,
+                     importance: Optional[str] = None) -> dict:
         raise NotImplementedError
 
     def delete_email(self, email_id: str) -> dict:

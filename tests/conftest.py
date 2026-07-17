@@ -67,11 +67,33 @@ class FakeOutlookClient(OutlookClientBase):
                      attachments=attachments)
         return {"status": "sent" if send else "draft_saved"}
 
-    def move_email(self, email_id, target_folder):
-        self._record("move_email", email_id=email_id,
-                     target_folder=target_folder)
-        return {"status": "moved", "folder": target_folder,
-                "id": "new-entry|store-1"}
+    def update_email(self, email_id, move_to=None, mark_read=None, flag=None,
+                     add_categories=None, remove_categories=None,
+                     importance=None):
+        self._record("update_email", email_id=email_id, move_to=move_to,
+                     mark_read=mark_read, flag=flag,
+                     add_categories=add_categories,
+                     remove_categories=remove_categories,
+                     importance=importance)
+        # Mirror the real client's `changed` ordering: state changes first, move last.
+        changed = []
+        if mark_read is not None:
+            changed.append("mark_read")
+        if flag is not None:
+            changed.append("flag")
+        if add_categories is not None:
+            changed.append("add_categories")
+        if remove_categories is not None:
+            changed.append("remove_categories")
+        if importance is not None:
+            changed.append("importance")
+        # Move changes the EntryID; simulate a new id only when we moved.
+        if move_to is not None:
+            changed.append("move_to")
+            new_id = "new-entry|store-1"
+        else:
+            new_id = email_id
+        return {"status": "updated", "id": new_id, "changed": changed}
 
     def delete_email(self, email_id):
         self._record("delete_email", email_id=email_id)

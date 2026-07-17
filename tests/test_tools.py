@@ -117,10 +117,29 @@ def test_reply_email(fake_client):
     assert kwargs["send"] is False
 
 
-def test_move_email_returns_new_id(fake_client):
-    content = call_tool("move_email", {"email_id": EMAIL_ID,
-                                       "target_folder": "Archive"})
-    assert result_json(content)["id"] == "new-entry|store-1"
+def test_update_email_move_returns_new_id(fake_client):
+    content = call_tool("update_email", {"email_id": EMAIL_ID,
+                                         "move_to": "Archive"})
+    result = result_json(content)
+    assert result["id"] == "new-entry|store-1"
+    assert result["status"] == "updated"
+    assert result["changed"] == ["move_to"]
+
+
+def test_update_email_state_only_keeps_same_id_and_lists_changes(fake_client):
+    content = call_tool("update_email", {
+        "email_id": EMAIL_ID, "mark_read": True, "flag": "follow_up",
+        "add_categories": ["Work"], "importance": "high",
+    })
+    result = result_json(content)
+    # No move -> id unchanged.
+    assert result["id"] == EMAIL_ID
+    assert result["changed"] == ["mark_read", "flag", "add_categories", "importance"]
+    # The client saw the full update.
+    name, kwargs = fake_client.calls[0]
+    assert name == "update_email"
+    assert kwargs["flag"] == "follow_up"
+    assert kwargs["importance"] == "high"
 
 
 def test_delete_email(fake_client):

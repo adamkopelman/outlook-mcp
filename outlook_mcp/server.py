@@ -125,11 +125,20 @@ def reply_email(email_id: str, body: str, reply_all: bool = False,
 
 
 @mcp.tool()
-def move_email(email_id: str, target_folder: str):
-    """Move an email to another folder. Returns the email's NEW id (ids
-    change when an item moves)."""
-    return get_client().move_email(email_id=email_id,
-                                   target_folder=target_folder)
+def update_email(email_id: str, move_to: Optional[str] = None,
+                 mark_read: Optional[bool] = None,
+                 flag: Optional[str] = None,
+                 add_categories: Optional[list[str]] = None,
+                 remove_categories: Optional[list[str]] = None,
+                 importance: Optional[str] = None):
+    """Update an existing email: move to a folder, mark read/unread, flag
+    ("follow_up"/"complete"/"clear"), add/remove categories, or set
+    importance ("low"/"normal"/"high"). Combine any of these in one call.
+    Returns the current-or-new id — moving changes the id."""
+    return get_client().update_email(
+        email_id=email_id, move_to=move_to, mark_read=mark_read, flag=flag,
+        add_categories=add_categories, remove_categories=remove_categories,
+        importance=importance)
 
 
 @mcp.tool()

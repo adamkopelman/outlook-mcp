@@ -419,14 +419,14 @@ class WindowsOutlookClient(OutlookClientBase):
                 "subject": reply.Subject}
 
     @_com
-    def move_email(self, email_id: str, target_folder: str) -> dict:
-        _, ns = self._mapi()
-        item = self._get_item(ns, email_id)
-        target = self._resolve_folder(ns, target_folder)
-        moved = item.Move(target)
-        # EntryID changes on Move — hand back the new id.
-        return {"status": "moved", "folder": target.Name,
-                "id": self._make_id(moved)}
+    def update_email(self, email_id: str, move_to: Optional[str] = None,
+                     mark_read: Optional[bool] = None,
+                     flag: Optional[str] = None,
+                     add_categories: Optional[list] = None,
+                     remove_categories: Optional[list] = None,
+                     importance: Optional[str] = None) -> dict:
+        # Real COM implementation added in Plan 5 Task 2.
+        raise NotImplementedError("update_email real COM impl — Plan 5 Task 2")
 
     @_com
     def delete_email(self, email_id: str) -> dict:

@@ -95,7 +95,7 @@ claude mcp add outlook -- outlook-mcp
 | `send_email` | **Send immediately** (to/cc/bcc, plain or HTML body) |
 | `create_draft` | Compose and save to Drafts without sending |
 | `reply_email` | Reply / reply-all (send, or save as draft with `send=false`) |
-| `move_email` | Move an email to another folder (returns its new id) |
+| `update_email` | Move, mark read/unread, flag, add/remove categories, or set importance on an email |
 | `delete_email` | Move an email to Deleted Items |
 | `list_events` | Calendar events in a date range (recurrences expanded) |
 | `get_event` | Full event details including attendees |
@@ -111,7 +111,7 @@ claude mcp add outlook -- outlook-mcp
 | `create_note` | Create a sticky note |
 
 Items are addressed by an opaque `id` returned from list/search tools.
-**Ids change when an item moves folders** — `move_email` returns the new id,
+**Ids change when an item moves folders** — `update_email` returns the new id,
 and a stale id produces a clear "item not found" error.
 
 ## Security notes

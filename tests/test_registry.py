@@ -5,7 +5,7 @@ from outlook_mcp import server
 EXPECTED_TOOLS = {
     # Email
     "list_folders", "list_emails", "get_email",
-    "send_email", "create_draft", "reply_email", "move_email", "delete_email",
+    "send_email", "create_draft", "reply_email", "update_email", "delete_email",
     # Calendar
     "list_events", "get_event", "create_event", "respond_to_meeting",
     # Attachments
