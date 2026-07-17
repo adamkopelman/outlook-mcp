@@ -46,3 +46,11 @@ def test_categories_round_trip_on_a_real_task(client):
         _, ns = client._mapi()
         item = client._get_item(ns, task_id)
         item.Delete()
+
+
+def test_list_emails_query_filter_narrows_results(client):
+    all_results = client.list_emails(folder="inbox", count=25)
+    # A query that almost certainly matches nothing should return <= all.
+    filtered = client.list_emails(
+        folder="inbox", count=25, query="zzqx-improbable-token-9137")
+    assert len(filtered) <= len(all_results)
