@@ -55,28 +55,34 @@ def list_folders():
 
 @mcp.tool()
 def list_emails(folder: str = "inbox", count: int = 10,
-                unread_only: bool = False):
-    """List recent emails in a folder, newest first. `folder` accepts a
-    well-known name (inbox, sent, drafts, deleted, outbox) or a path like
-    'Inbox/Receipts'. `count` is capped at 50."""
-    return get_client().list_emails(folder=folder, count=count,
-                                    unread_only=unread_only)
-
-
-@mcp.tool()
-def search_emails(query: str, folder: str = "inbox", count: int = 10,
-                  since_days: Optional[int] = None):
-    """Search emails by text across subject, sender name and body.
-    Optionally limit to messages received in the last `since_days` days."""
-    return get_client().search_emails(query=query, folder=folder, count=count,
-                                      since_days=since_days)
+                unread_only: bool = False, query: Optional[str] = None,
+                sender: Optional[str] = None, category: Optional[str] = None,
+                received_after: Optional[str] = None,
+                received_before: Optional[str] = None,
+                since_days: Optional[int] = None,
+                has_attachments: Optional[bool] = None,
+                flagged: bool = False, high_importance: bool = False):
+    """Find emails in a folder with optional text query and filters.
+    `folder` accepts a well-known name (inbox, sent, drafts, deleted, outbox)
+    or a path like 'Inbox/Receipts'. `count` is capped at 50. `query`
+    searches subject/sender/body text. `sender` matches sender name or
+    address. `category` filters by color category. `received_after`/
+    `received_before` are ISO dates; `since_days` is a relative alternative.
+    `has_attachments`, `flagged`, `high_importance` are optional boolean
+    filters."""
+    return get_client().list_emails(
+        folder=folder, count=count, unread_only=unread_only, query=query,
+        sender=sender, category=category, received_after=received_after,
+        received_before=received_before, since_days=since_days,
+        has_attachments=has_attachments, flagged=flagged,
+        high_importance=high_importance)
 
 
 @mcp.tool()
 def get_email(email_id: str, prefer_html: bool = False):
     """Read a full email (headers, body, attachment names) by the id
-    returned from list_emails/search_emails. Set `prefer_html` to also
-    get the HTML body."""
+    returned from list_emails. Set `prefer_html` to also get the HTML
+    body."""
     return get_client().get_email(email_id=email_id, prefer_html=prefer_html)
 
 

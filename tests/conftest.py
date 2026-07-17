@@ -29,16 +29,19 @@ class FakeOutlookClient(OutlookClientBase):
         self._record("list_folders")
         return [{"name": "Inbox", "path": "Inbox", "items": 2, "unread": 1}]
 
-    def list_emails(self, folder="inbox", count=10, unread_only=False):
+    def list_emails(self, folder="inbox", count=10, unread_only=False,
+                    query=None, sender=None, category=None,
+                    received_after=None, received_before=None,
+                    since_days=None, has_attachments=None,
+                    flagged=False, high_importance=False):
         self._record("list_emails", folder=folder, count=count,
-                     unread_only=unread_only)
+                     unread_only=unread_only, query=query, sender=sender,
+                     category=category, received_after=received_after,
+                     received_before=received_before, since_days=since_days,
+                     has_attachments=has_attachments, flagged=flagged,
+                     high_importance=high_importance)
         return [{"id": EMAIL_ID, "subject": "Hello", "sender": "Ada",
                  "unread": True, "categories": ["Work"]}]
-
-    def search_emails(self, query, folder="inbox", count=10, since_days=None):
-        self._record("search_emails", query=query, folder=folder, count=count,
-                     since_days=since_days)
-        return [{"id": EMAIL_ID, "subject": "Hello", "categories": []}]
 
     def get_email(self, email_id, prefer_html=False):
         self._record("get_email", email_id=email_id, prefer_html=prefer_html)

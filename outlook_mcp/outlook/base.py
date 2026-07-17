@@ -20,11 +20,13 @@ class OutlookClientBase:
         raise NotImplementedError
 
     def list_emails(self, folder: str = "inbox", count: int = 10,
-                    unread_only: bool = False) -> list:
-        raise NotImplementedError
-
-    def search_emails(self, query: str, folder: str = "inbox", count: int = 10,
-                      since_days: Optional[int] = None) -> list:
+                    unread_only: bool = False, query: Optional[str] = None,
+                    sender: Optional[str] = None, category: Optional[str] = None,
+                    received_after: Optional[str] = None,
+                    received_before: Optional[str] = None,
+                    since_days: Optional[int] = None,
+                    has_attachments: Optional[bool] = None,
+                    flagged: bool = False, high_importance: bool = False) -> list:
         raise NotImplementedError
 
     def get_email(self, email_id: str, prefer_html: bool = False) -> dict:

@@ -32,14 +32,22 @@ def test_list_emails_passes_arguments(fake_client):
     call_tool("list_emails", {"folder": "sent", "count": 5,
                               "unread_only": True})
     assert fake_client.calls == [
-        ("list_emails", {"folder": "sent", "count": 5, "unread_only": True})
+        ("list_emails", {"folder": "sent", "count": 5, "unread_only": True,
+                         "query": None, "sender": None, "category": None,
+                         "received_after": None, "received_before": None,
+                         "since_days": None, "has_attachments": None,
+                         "flagged": False, "high_importance": False})
     ]
 
 
 def test_list_emails_defaults(fake_client):
     call_tool("list_emails", {})
     assert fake_client.calls == [
-        ("list_emails", {"folder": "inbox", "count": 10, "unread_only": False})
+        ("list_emails", {"folder": "inbox", "count": 10, "unread_only": False,
+                         "query": None, "sender": None, "category": None,
+                         "received_after": None, "received_before": None,
+                         "since_days": None, "has_attachments": None,
+                         "flagged": False, "high_importance": False})
     ]
 
 
@@ -49,12 +57,20 @@ def test_list_emails_returns_categories(fake_client):
     assert result["categories"] == ["Work"]
 
 
-def test_search_emails(fake_client):
-    call_tool("search_emails", {"query": "invoice", "since_days": 30})
+def test_list_emails_forwards_query_and_filters(fake_client):
+    call_tool("list_emails", {
+        "query": "invoice", "sender": "ada@x.com", "category": "Work",
+        "since_days": 30, "has_attachments": True, "flagged": True,
+        "high_importance": True,
+    })
     name, kwargs = fake_client.calls[0]
-    assert name == "search_emails"
     assert kwargs["query"] == "invoice"
+    assert kwargs["sender"] == "ada@x.com"
+    assert kwargs["category"] == "Work"
     assert kwargs["since_days"] == 30
+    assert kwargs["has_attachments"] is True
+    assert kwargs["flagged"] is True
+    assert kwargs["high_importance"] is True
 
 
 def test_get_email(fake_client):

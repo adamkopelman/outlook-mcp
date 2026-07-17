@@ -240,32 +240,26 @@ class WindowsOutlookClient(OutlookClientBase):
 
     @_com
     def list_emails(self, folder: str = "inbox", count: int = 10,
-                    unread_only: bool = False) -> list:
+                    unread_only: bool = False, query: Optional[str] = None,
+                    sender: Optional[str] = None, category: Optional[str] = None,
+                    received_after: Optional[str] = None,
+                    received_before: Optional[str] = None,
+                    since_days: Optional[int] = None,
+                    has_attachments: Optional[bool] = None,
+                    flagged: bool = False, high_importance: bool = False) -> list:
         _, ns = self._mapi()
         count = max(1, min(int(count), MAX_EMAIL_COUNT))
         items = self._resolve_folder(ns, folder).Items
+        if query:
+            q = query.replace("'", "''")
+            dasl = (
+                '@SQL=("urn:schemas:httpmail:subject" LIKE \'%{0}%\' '
+                'OR "urn:schemas:httpmail:fromname" LIKE \'%{0}%\' '
+                'OR "urn:schemas:httpmail:textdescription" LIKE \'%{0}%\')'
+            ).format(q)
+            items = items.Restrict(dasl)
         if unread_only:
             items = items.Restrict("[UnRead] = True")
-        items.Sort("[ReceivedTime]", True)
-        results = []
-        for item in items:
-            results.append(self._email_summary(item))
-            if len(results) >= count:
-                break
-        return results
-
-    @_com
-    def search_emails(self, query: str, folder: str = "inbox", count: int = 10,
-                      since_days: Optional[int] = None) -> list:
-        _, ns = self._mapi()
-        count = max(1, min(int(count), MAX_EMAIL_COUNT))
-        q = (query or "").replace("'", "''")
-        dasl = (
-            '@SQL=("urn:schemas:httpmail:subject" LIKE \'%{0}%\' '
-            'OR "urn:schemas:httpmail:fromname" LIKE \'%{0}%\' '
-            'OR "urn:schemas:httpmail:textdescription" LIKE \'%{0}%\')'
-        ).format(q)
-        items = self._resolve_folder(ns, folder).Items.Restrict(dasl)
         if since_days:
             cutoff = datetime.now() - timedelta(days=int(since_days))
             items = items.Restrict(f"[ReceivedTime] >= '{_jet_dt(cutoff)}'")

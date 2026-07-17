@@ -4,7 +4,7 @@ from outlook_mcp import server
 
 EXPECTED_TOOLS = {
     # Email
-    "list_folders", "list_emails", "search_emails", "get_email",
+    "list_folders", "list_emails", "get_email",
     "send_email", "create_draft", "reply_email", "move_email", "delete_email",
     # Calendar
     "list_events", "get_event", "create_event", "respond_to_meeting",
@@ -35,7 +35,7 @@ def test_every_tool_has_description_and_object_schema():
 def test_required_arguments_marked_required():
     schemas = {tool.name: tool.inputSchema for tool in list_tools()}
     assert set(schemas["send_email"]["required"]) == {"to", "subject", "body"}
-    assert set(schemas["search_emails"]["required"]) == {"query"}
+    assert "required" not in schemas["list_emails"] or not schemas["list_emails"]["required"]
     assert set(schemas["create_event"]["required"]) == {"subject", "start", "end"}
     assert set(schemas["respond_to_meeting"]["required"]) == {"event_id", "response"}
     assert "required" not in schemas["list_folders"] or not schemas["list_folders"]["required"]
