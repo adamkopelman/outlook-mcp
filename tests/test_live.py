@@ -81,3 +81,15 @@ def test_send_with_missing_attachment_errors_before_sending(client):
             body="body",
             attachments=["C:/definitely/does/not/exist/nope.pdf"],
         )
+
+
+def test_get_email_reports_item_type_for_real_inbox_item(client):
+    emails = client.list_emails(folder="inbox", count=1)
+    if not emails:
+        pytest.skip("inbox is empty, nothing to check")
+    detail = client.get_email(emails[0]["id"])
+    assert detail["item_type"] in {"email", "meeting", "bounce", "read_receipt", "other"}
+    if detail["is_meeting"]:
+        assert "meeting" in detail
+    else:
+        assert "meeting" not in detail
