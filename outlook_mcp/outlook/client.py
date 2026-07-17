@@ -104,6 +104,17 @@ def _set_item_categories(item, cats: list) -> None:
     item.Categories = _join_categories(cats)
 
 
+def _attach_files(item, paths: list) -> None:
+    """Attach local files to a mail/reply item. Validates every path exists
+    FIRST (so a bad path fails before anything is sent), then adds each via
+    item.Attachments.Add(path)."""
+    for p in paths:
+        if not os.path.isfile(p):
+            raise ToolError(f"attachment not found: {p}")
+    for p in paths:
+        item.Attachments.Add(p)
+
+
 class WindowsOutlookClient(OutlookClientBase):
     """Talks to a running (or auto-launched) classic Outlook via COM."""
 
@@ -341,27 +352,32 @@ class WindowsOutlookClient(OutlookClientBase):
     @_com
     def send_email(self, to: list, subject: str, body: str,
                    cc: Optional[list] = None, bcc: Optional[list] = None,
-                   html: bool = False) -> dict:
+                   html: bool = False, attachments: Optional[list] = None) -> dict:
         if not to:
             raise ToolError("send_email requires at least one recipient in 'to'.")
         app, _ = self._mapi()
         mail = self._compose(app, to, subject, body, cc, bcc, html)
+        if attachments:
+            _attach_files(mail, attachments)
         mail.Send()
         return {"status": "sent", "to": "; ".join(to), "subject": subject}
 
     @_com
     def create_draft(self, to: list, subject: str, body: str,
                      cc: Optional[list] = None, bcc: Optional[list] = None,
-                     html: bool = False) -> dict:
+                     html: bool = False, attachments: Optional[list] = None) -> dict:
         app, _ = self._mapi()
         mail = self._compose(app, to, subject, body, cc, bcc, html)
+        if attachments:
+            _attach_files(mail, attachments)
         mail.Save()  # Save first so EntryID exists
         return {"status": "draft_saved", "id": self._make_id(mail),
                 "subject": subject}
 
     @_com
     def reply_email(self, email_id: str, body: str, reply_all: bool = False,
-                    html: bool = False, send: bool = True) -> dict:
+                    html: bool = False, send: bool = True,
+                    attachments: Optional[list] = None) -> dict:
         _, ns = self._mapi()
         item = self._get_item(ns, email_id)
         reply = item.ReplyAll() if reply_all else item.Reply()
@@ -369,6 +385,8 @@ class WindowsOutlookClient(OutlookClientBase):
             reply.HTMLBody = (body or "") + reply.HTMLBody
         else:
             reply.Body = (body or "") + "\n\n" + reply.Body
+        if attachments:
+            _attach_files(reply, attachments)
         if send:
             reply.Send()
             return {"status": "sent", "subject": reply.Subject}

@@ -89,31 +89,39 @@ def get_email(email_id: str, prefer_html: bool = False):
 @mcp.tool()
 def send_email(to: list[str], subject: str, body: str,
                cc: Optional[list[str]] = None,
-               bcc: Optional[list[str]] = None, html: bool = False):
+               bcc: Optional[list[str]] = None, html: bool = False,
+               attachments: Optional[list[str]] = None):
     """Send an email immediately as the signed-in Outlook user. Use
     create_draft instead if the user should review before sending.
-    Set `html` to true if `body` is HTML."""
+    Set `html` to true if `body` is HTML. `attachments` is a list of local
+    file paths; a missing path fails before anything is sent."""
     return get_client().send_email(to=to, subject=subject, body=body, cc=cc,
-                                   bcc=bcc, html=html)
+                                   bcc=bcc, html=html, attachments=attachments)
 
 
 @mcp.tool()
 def create_draft(to: list[str], subject: str, body: str,
                  cc: Optional[list[str]] = None,
-                 bcc: Optional[list[str]] = None, html: bool = False):
+                 bcc: Optional[list[str]] = None, html: bool = False,
+                 attachments: Optional[list[str]] = None):
     """Compose an email and save it to Drafts without sending. Returns the
-    draft's id."""
+    draft's id. `attachments` is a list of local file paths; a missing path
+    fails before saving."""
     return get_client().create_draft(to=to, subject=subject, body=body, cc=cc,
-                                     bcc=bcc, html=html)
+                                     bcc=bcc, html=html, attachments=attachments)
 
 
 @mcp.tool()
 def reply_email(email_id: str, body: str, reply_all: bool = False,
-                html: bool = False, send: bool = True):
+                html: bool = False, send: bool = True,
+                attachments: Optional[list[str]] = None):
     """Reply to an email (reply-all optional). Sends immediately by
-    default; pass send=false to save the reply as a draft instead."""
+    default; pass send=false to save the reply as a draft instead.
+    `attachments` is a list of local file paths; a missing path fails
+    before anything is sent or saved."""
     return get_client().reply_email(email_id=email_id, body=body,
-                                    reply_all=reply_all, html=html, send=send)
+                                    reply_all=reply_all, html=html, send=send,
+                                    attachments=attachments)
 
 
 @mcp.tool()

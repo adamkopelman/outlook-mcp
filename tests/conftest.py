@@ -48,20 +48,23 @@ class FakeOutlookClient(OutlookClientBase):
         return {"id": email_id, "subject": "Hello", "body": "Hi there",
                 "categories": []}
 
-    def send_email(self, to, subject, body, cc=None, bcc=None, html=False):
+    def send_email(self, to, subject, body, cc=None, bcc=None, html=False,
+                   attachments=None):
         self._record("send_email", to=to, subject=subject, body=body, cc=cc,
-                     bcc=bcc, html=html)
+                     bcc=bcc, html=html, attachments=attachments)
         return {"status": "sent", "to": "; ".join(to), "subject": subject}
 
-    def create_draft(self, to, subject, body, cc=None, bcc=None, html=False):
+    def create_draft(self, to, subject, body, cc=None, bcc=None, html=False,
+                     attachments=None):
         self._record("create_draft", to=to, subject=subject, body=body,
-                     cc=cc, bcc=bcc, html=html)
+                     cc=cc, bcc=bcc, html=html, attachments=attachments)
         return {"status": "draft_saved", "id": EMAIL_ID, "subject": subject}
 
     def reply_email(self, email_id, body, reply_all=False, html=False,
-                    send=True):
+                    send=True, attachments=None):
         self._record("reply_email", email_id=email_id, body=body,
-                     reply_all=reply_all, html=html, send=send)
+                     reply_all=reply_all, html=html, send=send,
+                     attachments=attachments)
         return {"status": "sent" if send else "draft_saved"}
 
     def move_email(self, email_id, target_folder):

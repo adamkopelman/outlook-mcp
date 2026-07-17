@@ -87,6 +87,15 @@ def test_send_email(fake_client):
     assert kwargs["html"] is False
 
 
+def test_send_email_forwards_attachments(fake_client):
+    call_tool("send_email", {
+        "to": ["a@x.com"], "subject": "Hi", "body": "yo",
+        "attachments": ["C:/tmp/a.pdf", "C:/tmp/b.png"],
+    })
+    name, kwargs = fake_client.calls[0]
+    assert kwargs["attachments"] == ["C:/tmp/a.pdf", "C:/tmp/b.png"]
+
+
 def test_create_draft(fake_client):
     content = call_tool("create_draft", {"to": ["a@example.com"],
                                          "subject": "Hi", "body": "Hello!"})

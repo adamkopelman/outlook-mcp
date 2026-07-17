@@ -34,16 +34,17 @@ class OutlookClientBase:
 
     def send_email(self, to: list, subject: str, body: str,
                    cc: Optional[list] = None, bcc: Optional[list] = None,
-                   html: bool = False) -> dict:
+                   html: bool = False, attachments: Optional[list] = None) -> dict:
         raise NotImplementedError
 
     def create_draft(self, to: list, subject: str, body: str,
                      cc: Optional[list] = None, bcc: Optional[list] = None,
-                     html: bool = False) -> dict:
+                     html: bool = False, attachments: Optional[list] = None) -> dict:
         raise NotImplementedError
 
     def reply_email(self, email_id: str, body: str, reply_all: bool = False,
-                    html: bool = False, send: bool = True) -> dict:
+                    html: bool = False, send: bool = True,
+                    attachments: Optional[list] = None) -> dict:
         raise NotImplementedError
 
     def move_email(self, email_id: str, target_folder: str) -> dict:
