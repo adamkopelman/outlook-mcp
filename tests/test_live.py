@@ -54,3 +54,30 @@ def test_list_emails_query_filter_narrows_results(client):
     filtered = client.list_emails(
         folder="inbox", count=25, query="zzqx-improbable-token-9137")
     assert len(filtered) <= len(all_results)
+
+
+def test_create_draft_with_attachment_round_trips(client, tmp_path):
+    path = tmp_path / "outlook-mcp-live-attach.txt"
+    path.write_text("live attachment test")
+    created = client.create_draft(
+        to=["nobody@example.invalid"],
+        subject="outlook-mcp attachment test",
+        body="see attached",
+        attachments=[str(path)],
+    )
+    try:
+        assert created["status"] == "draft_saved"
+    finally:
+        client.delete_email(created["id"])
+
+
+def test_send_with_missing_attachment_errors_before_sending(client):
+    from outlook_mcp.errors import ToolError
+
+    with pytest.raises(ToolError, match="attachment not found"):
+        client.send_email(
+            to=["nobody@example.invalid"],
+            subject="should not send",
+            body="body",
+            attachments=["C:/definitely/does/not/exist/nope.pdf"],
+        )
