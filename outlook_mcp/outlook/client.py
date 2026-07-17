@@ -250,6 +250,8 @@ class WindowsOutlookClient(OutlookClientBase):
         _, ns = self._mapi()
         count = max(1, min(int(count), MAX_EMAIL_COUNT))
         items = self._resolve_folder(ns, folder).Items
+
+        # Text query: DASL @SQL across subject/sender/body (escaped).
         if query:
             q = query.replace("'", "''")
             dasl = (
@@ -258,15 +260,47 @@ class WindowsOutlookClient(OutlookClientBase):
                 'OR "urn:schemas:httpmail:textdescription" LIKE \'%{0}%\')'
             ).format(q)
             items = items.Restrict(dasl)
+        # Sender: DASL @SQL against fromname + fromemail.
+        if sender:
+            s = sender.replace("'", "''")
+            dasl = (
+                '@SQL=("urn:schemas:httpmail:fromname" LIKE \'%{0}%\' '
+                'OR "urn:schemas:httpmail:fromemail" LIKE \'%{0}%\')'
+            ).format(s)
+            items = items.Restrict(dasl)
         if unread_only:
             items = items.Restrict("[UnRead] = True")
+        if flagged:
+            # FlagStatus 2 = flagged/marked.
+            items = items.Restrict("[FlagStatus] = 2")
+        if high_importance:
+            items = items.Restrict("[Importance] = 2")
+        # Date filters: since_days (relative), received_after/before (absolute).
         if since_days:
             cutoff = datetime.now() - timedelta(days=int(since_days))
             items = items.Restrict(f"[ReceivedTime] >= '{_jet_dt(cutoff)}'")
+        if received_after:
+            dt = _parse_dt(received_after, "received_after")
+            items = items.Restrict(f"[ReceivedTime] >= '{_jet_dt(dt)}'")
+        if received_before:
+            dt = _parse_dt(received_before, "received_before")
+            items = items.Restrict(f"[ReceivedTime] <= '{_jet_dt(dt)}'")
+
         items.Sort("[ReceivedTime]", True)
+
+        # Client-side fuzzy filters: category + has_attachments. Iterate,
+        # build each summary, keep it only if it passes, stop at count.
+        cat_want = category.lower() if category else None
         results = []
         for item in items:
-            results.append(self._email_summary(item))
+            summary = self._email_summary(item)
+            if cat_want is not None:
+                if not any(c.lower() == cat_want for c in summary["categories"]):
+                    continue
+            if has_attachments is not None:
+                if summary["has_attachments"] != has_attachments:
+                    continue
+            results.append(summary)
             if len(results) >= count:
                 break
         return results
