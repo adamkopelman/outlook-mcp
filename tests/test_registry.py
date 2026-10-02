@@ -6,6 +6,7 @@ EXPECTED_TOOLS = {
     # Email
     "list_folders", "list_emails", "get_email",
     "send_email", "create_draft", "reply_email", "update_email", "delete_email",
+    "empty_deleted_items",
     # Calendar
     "list_events", "get_event", "create_event", "respond_to_meeting",
     # Attachments

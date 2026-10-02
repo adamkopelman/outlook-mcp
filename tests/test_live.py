@@ -93,3 +93,20 @@ def test_get_email_reports_item_type_for_real_inbox_item(client):
         assert "meeting" in detail
     else:
         assert "meeting" not in detail
+
+
+def test_permanent_delete_of_draft_skips_deleted_items(client):
+    from outlook_mcp.errors import ToolError
+
+    subject = "outlook-mcp permanent delete probe zzqx-7731"
+    created = client.create_draft(
+        to=["nobody@example.invalid"], subject=subject, body="delete me")
+    result = client.delete_email(created["id"], permanent=True)
+    assert result["permanent"] is True
+
+    # The old id must no longer resolve...
+    with pytest.raises(ToolError):
+        client.get_email(created["id"])
+    # ...and nothing with that subject may be sitting in Deleted Items.
+    leftovers = client.list_emails(folder="deleted", count=50, query=subject)
+    assert not [e for e in leftovers if e["subject"] == subject]

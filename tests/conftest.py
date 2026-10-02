@@ -1,3 +1,4 @@
+from tests import com_fakes  # noqa: F401  (installs COM stubs off Windows)
 from typing import Optional
 
 import pytest
@@ -95,9 +96,16 @@ class FakeOutlookClient(OutlookClientBase):
             new_id = email_id
         return {"status": "updated", "id": new_id, "changed": changed}
 
-    def delete_email(self, email_id):
-        self._record("delete_email", email_id=email_id)
-        return {"status": "deleted"}
+    def delete_email(self, email_id, permanent=False):
+        self._record("delete_email", email_id=email_id, permanent=permanent)
+        return {"status": "deleted", "permanent": permanent}
+
+    def empty_deleted_items(self, confirm=False):
+        self._record("empty_deleted_items", confirm=confirm)
+        if not confirm:
+            raise ToolError("empty_deleted_items requires confirm=true")
+        return {"status": "emptied", "items_deleted": 2,
+                "folders_deleted": 1, "failed": 0}
 
     # Calendar
     def list_events(self, start_date=None, end_date=None):

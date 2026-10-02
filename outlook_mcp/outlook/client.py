@@ -494,14 +494,69 @@ class WindowsOutlookClient(OutlookClientBase):
 
         return {"status": "updated", "id": new_id, "changed": changed}
 
+    def _deleted_items_for(self, ns, item):
+        """The Deleted Items folder of the item's own store (so a hard delete
+        of an item in a secondary mailbox/PST stays in that store), falling
+        back to the default store's when the store can't be resolved."""
+        try:
+            return item.Parent.Store.GetDefaultFolder(c.OL_FOLDER_DELETED_ITEMS)
+        except (pywintypes.com_error, AttributeError):
+            return ns.GetDefaultFolder(c.OL_FOLDER_DELETED_ITEMS)
+
     @_com
-    def delete_email(self, email_id: str) -> dict:
+    def delete_email(self, email_id: str, permanent: bool = False) -> dict:
         _, ns = self._mapi()
         item = self._get_item(ns, email_id)
         subject = getattr(item, "Subject", "") or ""
-        item.Delete()
-        return {"status": "deleted", "subject": subject,
-                "note": "Moved to Deleted Items."}
+        if not permanent:
+            item.Delete()
+            return {"status": "deleted", "subject": subject, "permanent": False,
+                    "note": "Moved to Deleted Items."}
+
+        # OOM has no hard-delete call; Delete() on an item already in Deleted
+        # Items is permanent, so move it there first (Outlook's shift+delete).
+        deleted = self._deleted_items_for(ns, item)
+        parent_id = getattr(getattr(item, "Parent", None), "EntryID", None)
+        if parent_id is not None and parent_id == deleted.EntryID:
+            item.Delete()
+        else:
+            moved = item.Move(deleted)  # Move returns the item in its new home.
+            moved.Delete()
+        return {"status": "deleted", "subject": subject, "permanent": True,
+                "note": "Permanently deleted (not recoverable from Deleted Items)."}
+
+    @_com
+    def empty_deleted_items(self, confirm: bool = False) -> dict:
+        if not confirm:
+            raise ToolError(
+                "empty_deleted_items permanently deletes EVERYTHING in Deleted "
+                "Items (items and subfolders) and cannot be undone. Call again "
+                "with confirm=true to proceed."
+            )
+        _, ns = self._mapi()
+        folder = ns.GetDefaultFolder(c.OL_FOLDER_DELETED_ITEMS)
+        items_deleted = folders_deleted = failed = 0
+
+        # Walk backwards: deleting during forward iteration skips items as
+        # the collection re-indexes. One stuck item must not abort the rest.
+        items = folder.Items
+        for i in range(items.Count, 0, -1):
+            try:
+                items.Item(i).Delete()
+                items_deleted += 1
+            except pywintypes.com_error:
+                failed += 1
+
+        subfolders = folder.Folders
+        for i in range(subfolders.Count, 0, -1):
+            try:
+                subfolders.Item(i).Delete()
+                folders_deleted += 1
+            except pywintypes.com_error:
+                failed += 1
+
+        return {"status": "emptied", "items_deleted": items_deleted,
+                "folders_deleted": folders_deleted, "failed": failed}
 
     # ---- Calendar ---------------------------------------------------
 

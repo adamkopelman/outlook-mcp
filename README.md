@@ -96,7 +96,8 @@ claude mcp add outlook -- outlook-mcp
 | `create_draft` | Compose and save to Drafts without sending |
 | `reply_email` | Reply / reply-all (send, or save as draft with `send=false`) |
 | `update_email` | Move, mark read/unread, flag, add/remove categories, or set importance on an email |
-| `delete_email` | Move an email to Deleted Items |
+| `delete_email` | Move an email to Deleted Items, or hard-delete it with `permanent=true` (like shift+delete — not recoverable from Deleted Items) |
+| `empty_deleted_items` | **Permanently** delete everything in Deleted Items (items and subfolders); refuses unless `confirm=true` |
 | `list_events` | Calendar events in a date range (recurrences expanded) |
 | `get_event` | Full event details including attendees |
 | `create_event` | Create an appointment — adding `attendees` sends invites |

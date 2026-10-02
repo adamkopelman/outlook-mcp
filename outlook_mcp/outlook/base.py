@@ -55,7 +55,10 @@ class OutlookClientBase:
                      importance: Optional[str] = None) -> dict:
         raise NotImplementedError
 
-    def delete_email(self, email_id: str) -> dict:
+    def delete_email(self, email_id: str, permanent: bool = False) -> dict:
+        raise NotImplementedError
+
+    def empty_deleted_items(self, confirm: bool = False) -> dict:
         raise NotImplementedError
 
     # ---- Calendar --------------------------------------------------

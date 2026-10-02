@@ -143,8 +143,31 @@ def test_update_email_state_only_keeps_same_id_and_lists_changes(fake_client):
 
 
 def test_delete_email(fake_client):
-    call_tool("delete_email", {"email_id": EMAIL_ID})
-    assert fake_client.calls == [("delete_email", {"email_id": EMAIL_ID})]
+    content = call_tool("delete_email", {"email_id": EMAIL_ID})
+    # permanent defaults to False (soft delete).
+    assert fake_client.calls == [("delete_email", {"email_id": EMAIL_ID,
+                                                   "permanent": False})]
+    assert result_json(content)["permanent"] is False
+
+
+def test_delete_email_permanent_forwarded(fake_client):
+    content = call_tool("delete_email", {"email_id": EMAIL_ID, "permanent": True})
+    assert fake_client.calls == [("delete_email", {"email_id": EMAIL_ID,
+                                                   "permanent": True})]
+    assert result_json(content)["permanent"] is True
+
+
+def test_empty_deleted_items_requires_confirm(fake_client):
+    # confirm defaults to False, and the refusal surfaces as a tool error.
+    with pytest.raises(Exception, match="confirm"):
+        call_tool("empty_deleted_items", {})
+    assert fake_client.calls == [("empty_deleted_items", {"confirm": False})]
+
+
+def test_empty_deleted_items_with_confirm(fake_client):
+    content = call_tool("empty_deleted_items", {"confirm": True})
+    assert fake_client.calls == [("empty_deleted_items", {"confirm": True})]
+    assert result_json(content)["status"] == "emptied"
 
 
 # ---- Calendar -------------------------------------------------------

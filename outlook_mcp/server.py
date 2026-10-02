@@ -142,9 +142,24 @@ def update_email(email_id: str, move_to: Optional[str] = None,
 
 
 @mcp.tool()
-def delete_email(email_id: str):
-    """Delete an email (moves it to Deleted Items)."""
-    return get_client().delete_email(email_id=email_id)
+def delete_email(email_id: str, permanent: bool = False):
+    """Delete an email. By default it moves to Deleted Items (recoverable).
+    With permanent=true it is hard-deleted like Outlook's shift+delete
+    (moved to Deleted Items, then deleted from there) and CANNOT be
+    recovered from Deleted Items. On Exchange with retention it may still
+    land in Recoverable Items, subject to server policy."""
+    return get_client().delete_email(email_id=email_id, permanent=permanent)
+
+
+@mcp.tool()
+def empty_deleted_items(confirm: bool = False):
+    """Permanently delete EVERYTHING in the default mailbox's Deleted Items
+    folder (items and subfolders). IRREVERSIBLE — refuses unless
+    confirm=true; only pass confirm=true when the user has explicitly asked
+    to empty Deleted Items. Returns counts of items/folders deleted and
+    failures. On Exchange with retention, items may still be held in
+    Recoverable Items per server policy."""
+    return get_client().empty_deleted_items(confirm=confirm)
 
 
 # ---- Calendar tools -------------------------------------------------
