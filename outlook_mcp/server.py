@@ -142,6 +142,26 @@ def update_email(email_id: str, move_to: Optional[str] = None,
 
 
 @mcp.tool()
+def update_draft(draft_id: str, subject: Optional[str] = None,
+                 body: Optional[str] = None, html_body: Optional[str] = None,
+                 to: Optional[list[str]] = None,
+                 cc: Optional[list[str]] = None,
+                 bcc: Optional[list[str]] = None,
+                 attachments: Optional[list[str]] = None):
+    """Edit an existing unsent draft (e.g. one from create_draft or
+    reply_email with send=false) and save it. The draft is NOT sent.
+    Only the fields you pass change. `subject`, `body` (plain text) and
+    `html_body` replace the current values; pass `body` or `html_body`,
+    not both. `to`/`cc`/`bcc` replace that recipient line entirely (an
+    empty list clears it). `attachments` is a list of local file paths
+    appended to the existing attachments. Sent or received emails are
+    rejected. Returns the draft id and the list of changed fields."""
+    return get_client().update_draft(
+        draft_id=draft_id, subject=subject, body=body, html_body=html_body,
+        to=to, cc=cc, bcc=bcc, attachments=attachments)
+
+
+@mcp.tool()
 def delete_email(email_id: str):
     """Delete an email (moves it to Deleted Items)."""
     return get_client().delete_email(email_id=email_id)

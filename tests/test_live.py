@@ -93,3 +93,30 @@ def test_get_email_reports_item_type_for_real_inbox_item(client):
         assert "meeting" in detail
     else:
         assert "meeting" not in detail
+
+
+def test_update_draft_round_trips(client):
+    created = client.create_draft(
+        to=["nobody@example.invalid"],
+        subject="outlook-mcp update_draft live test",
+        body="original body",
+    )
+    draft_id = created["id"]
+    try:
+        updated = client.update_draft(
+            draft_id,
+            subject="outlook-mcp update_draft live test (edited)",
+            body="edited body",
+            to=["someone@example.invalid"],
+        )
+        assert updated["status"] == "draft_updated"
+        assert updated["changed"] == ["subject", "body", "to"]
+        draft_id = updated["id"]
+
+        detail = client.get_email(draft_id)
+        assert detail["subject"] == "outlook-mcp update_draft live test (edited)"
+        assert "edited body" in detail["body"]
+        assert "someone@example.invalid" in detail["to"]
+        assert "nobody@example.invalid" not in detail["to"]
+    finally:
+        client.delete_email(draft_id)

@@ -142,6 +142,24 @@ def test_update_email_state_only_keeps_same_id_and_lists_changes(fake_client):
     assert kwargs["importance"] == "high"
 
 
+def test_update_draft_forwards_all_fields(fake_client):
+    content = call_tool("update_draft", {
+        "draft_id": EMAIL_ID, "subject": "New", "html_body": "<p>hi</p>",
+        "to": ["a@x.com"], "cc": [], "attachments": ["C:/f.txt"],
+    })
+    assert fake_client.calls == [
+        ("update_draft", {"draft_id": EMAIL_ID, "subject": "New",
+                          "body": None, "html_body": "<p>hi</p>",
+                          "to": ["a@x.com"], "cc": [], "bcc": None,
+                          "attachments": ["C:/f.txt"]})
+    ]
+    result = result_json(content)
+    assert result["status"] == "draft_updated"
+    assert result["id"] == EMAIL_ID
+    assert result["changed"] == ["subject", "html_body", "to", "cc",
+                                 "attachments"]
+
+
 def test_delete_email(fake_client):
     call_tool("delete_email", {"email_id": EMAIL_ID})
     assert fake_client.calls == [("delete_email", {"email_id": EMAIL_ID})]

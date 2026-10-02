@@ -55,6 +55,14 @@ class OutlookClientBase:
                      importance: Optional[str] = None) -> dict:
         raise NotImplementedError
 
+    def update_draft(self, draft_id: str, subject: Optional[str] = None,
+                     body: Optional[str] = None,
+                     html_body: Optional[str] = None,
+                     to: Optional[list] = None, cc: Optional[list] = None,
+                     bcc: Optional[list] = None,
+                     attachments: Optional[list] = None) -> dict:
+        raise NotImplementedError
+
     def delete_email(self, email_id: str) -> dict:
         raise NotImplementedError
 

@@ -96,6 +96,7 @@ claude mcp add outlook -- outlook-mcp
 | `create_draft` | Compose and save to Drafts without sending |
 | `reply_email` | Reply / reply-all (send, or save as draft with `send=false`) |
 | `update_email` | Move, mark read/unread, flag, add/remove categories, or set importance on an email |
+| `update_draft` | Edit an unsent draft's subject, body/HTML body, to/cc/bcc (replace), or append attachments — saves, never sends |
 | `delete_email` | Move an email to Deleted Items |
 | `list_events` | Calendar events in a date range (recurrences expanded) |
 | `get_event` | Full event details including attendees |

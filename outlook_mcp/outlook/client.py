@@ -495,6 +495,66 @@ class WindowsOutlookClient(OutlookClientBase):
         return {"status": "updated", "id": new_id, "changed": changed}
 
     @_com
+    def update_draft(self, draft_id: str, subject: Optional[str] = None,
+                     body: Optional[str] = None,
+                     html_body: Optional[str] = None,
+                     to: Optional[list] = None, cc: Optional[list] = None,
+                     bcc: Optional[list] = None,
+                     attachments: Optional[list] = None) -> dict:
+        # ---- validate everything before touching the item ----
+        if body is not None and html_body is not None:
+            raise ToolError("Pass either 'body' or 'html_body', not both.")
+        if (all(v is None for v in (subject, body, html_body, to, cc, bcc))
+                and not attachments):
+            raise ToolError(
+                "update_draft needs at least one of: subject, body, "
+                "html_body, to, cc, bcc, attachments."
+            )
+        for p in attachments or []:
+            if not os.path.isfile(p):
+                raise ToolError(f"attachment not found: {p}")
+
+        _, ns = self._mapi()
+        item = self._get_item(ns, draft_id)
+        if getattr(item, "Sent", False):
+            raise ToolError(
+                "Only unsent drafts can be edited; this item has already been "
+                "sent or received. Use reply_email or create_draft instead."
+            )
+        changed = []
+
+        if subject is not None:
+            item.Subject = subject
+            changed.append("subject")
+        # Set BodyFormat before the body so Outlook doesn't re-convert it.
+        if body is not None:
+            item.BodyFormat = c.OL_FORMAT_PLAIN
+            item.Body = body
+            changed.append("body")
+        if html_body is not None:
+            item.BodyFormat = c.OL_FORMAT_HTML
+            item.HTMLBody = html_body
+            changed.append("html_body")
+        # Recipients replace the existing ones of that type; [] clears them.
+        if to is not None:
+            item.To = "; ".join(to)
+            changed.append("to")
+        if cc is not None:
+            item.CC = "; ".join(cc)
+            changed.append("cc")
+        if bcc is not None:
+            item.BCC = "; ".join(bcc)
+            changed.append("bcc")
+        if attachments:
+            # Appended — existing attachments are kept.
+            _attach_files(item, attachments)
+            changed.append("attachments")
+
+        item.Save()  # one Save for all changes; never sends
+        return {"status": "draft_updated", "id": self._make_id(item),
+                "changed": changed}
+
+    @_com
     def delete_email(self, email_id: str) -> dict:
         _, ns = self._mapi()
         item = self._get_item(ns, email_id)

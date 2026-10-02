@@ -5,7 +5,8 @@ from outlook_mcp import server
 EXPECTED_TOOLS = {
     # Email
     "list_folders", "list_emails", "get_email",
-    "send_email", "create_draft", "reply_email", "update_email", "delete_email",
+    "send_email", "create_draft", "reply_email", "update_email", "update_draft",
+    "delete_email",
     # Calendar
     "list_events", "get_event", "create_event", "respond_to_meeting",
     # Attachments
@@ -38,4 +39,5 @@ def test_required_arguments_marked_required():
     assert "required" not in schemas["list_emails"] or not schemas["list_emails"]["required"]
     assert set(schemas["create_event"]["required"]) == {"subject", "start", "end"}
     assert set(schemas["respond_to_meeting"]["required"]) == {"event_id", "response"}
+    assert schemas["update_draft"]["required"] == ["draft_id"]
     assert "required" not in schemas["list_folders"] or not schemas["list_folders"]["required"]
