@@ -1,3 +1,4 @@
+from tests import com_fakes  # noqa: F401  (installs COM stubs off Windows)
 from typing import Optional
 
 import pytest

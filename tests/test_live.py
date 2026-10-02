@@ -56,6 +56,28 @@ def test_list_emails_query_filter_narrows_results(client):
     assert len(filtered) <= len(all_results)
 
 
+def test_list_emails_hebrew_query_finds_matching_subject(client):
+    # Issue #4: use a Hebrew word taken from a real inbox subject (if any)
+    # and check list_emails(query=...) finds that email. Set
+    # OUTLOOK_MCP_LIVE_HEBREW_QUERY to pin a specific term instead.
+    import re
+
+    term = os.environ.get("OUTLOOK_MCP_LIVE_HEBREW_QUERY")
+    expected_id = None
+    if not term:
+        for email in client.list_emails(folder="inbox", count=50):
+            words = re.findall(r"[\u0590-\u05FF]{3,}", email["subject"])
+            if words:
+                term, expected_id = words[0], email["id"]
+                break
+    if not term:
+        pytest.skip("no Hebrew subject in the 50 newest inbox emails")
+    results = client.list_emails(folder="inbox", count=50, query=term)
+    assert results, f"no results for Hebrew query {term!r}"
+    if expected_id is not None:
+        assert expected_id in {r["id"] for r in results}
+
+
 def test_create_draft_with_attachment_round_trips(client, tmp_path):
     path = tmp_path / "outlook-mcp-live-attach.txt"
     path.write_text("live attachment test")

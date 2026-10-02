@@ -11,6 +11,7 @@ Every public method:
 import functools
 import os
 import re
+import unicodedata
 from datetime import date, datetime, time, timedelta
 from typing import Optional
 
@@ -26,6 +27,9 @@ from outlook_mcp.outlook.base import OutlookClientBase
 MAX_EMAIL_COUNT = 50
 MAX_CALENDAR_ITEMS = 250
 MAX_BODY_CHARS = 100_000
+# Upper bound on items scanned client-side when the DASL text search for a
+# non-ASCII query comes back empty (see list_emails).
+MAX_SCAN_ITEMS = 2000
 
 _UNSAFE_FILENAME_CHARS = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
 
@@ -79,6 +83,19 @@ def _truncate(text: str) -> str:
 def _safe_filename(name: str) -> str:
     cleaned = _UNSAFE_FILENAME_CHARS.sub("_", name or "").strip(". ")
     return cleaned or "attachment"
+
+
+def _fold(text: str) -> str:
+    """Normalize text for caseless matching: NFC (so composed and decomposed
+    forms of the same character compare equal) then casefold."""
+    return unicodedata.normalize("NFC", text or "").casefold()
+
+
+def _text_matches(query: str, *fields) -> bool:
+    """True if `query` occurs (caseless, NFC-normalized) in any of the given
+    fields. None/empty fields are skipped."""
+    needle = _fold(query)
+    return any(needle in _fold(f) for f in fields if f)
 
 
 def _parse_categories(raw: str) -> list:
@@ -262,15 +279,6 @@ class WindowsOutlookClient(OutlookClientBase):
         count = max(1, min(int(count), MAX_EMAIL_COUNT))
         items = self._resolve_folder(ns, folder).Items
 
-        # Text query: DASL @SQL across subject/sender/body (escaped).
-        if query:
-            q = query.replace("'", "''")
-            dasl = (
-                '@SQL=("urn:schemas:httpmail:subject" LIKE \'%{0}%\' '
-                'OR "urn:schemas:httpmail:fromname" LIKE \'%{0}%\' '
-                'OR "urn:schemas:httpmail:textdescription" LIKE \'%{0}%\')'
-            ).format(q)
-            items = items.Restrict(dasl)
         # Sender: DASL @SQL against fromname + fromemail.
         if sender:
             s = sender.replace("'", "''")
@@ -297,7 +305,29 @@ class WindowsOutlookClient(OutlookClientBase):
             dt = _parse_dt(received_before, "received_before")
             items = items.Restrict(f"[ReceivedTime] <= '{_jet_dt(dt)}'")
 
-        items.Sort("[ReceivedTime]", True)
+        # Text query last, so the fallback scan below only walks items that
+        # already passed every other filter.
+        if query:
+            q = unicodedata.normalize("NFC", query)
+            esc = q.replace("'", "''")
+            dasl = (
+                '@SQL=("urn:schemas:httpmail:subject" LIKE \'%{0}%\' '
+                'OR "urn:schemas:httpmail:fromname" LIKE \'%{0}%\' '
+                'OR "urn:schemas:httpmail:textdescription" LIKE \'%{0}%\')'
+            ).format(esc)
+            matched = items.Restrict(dasl)
+            # DASL LIKE has been observed to return nothing for Hebrew (and
+            # other non-Latin) terms even when matching mail exists (issue
+            # #4). For non-ASCII queries, treat an empty DASL result as
+            # unreliable and scan the pre-filtered items client-side.
+            if matched.Count == 0 and not q.isascii():
+                items.Sort("[ReceivedTime]", True)
+                items = self._scan_for_text(items, q)
+            else:
+                items = matched
+                items.Sort("[ReceivedTime]", True)
+        else:
+            items.Sort("[ReceivedTime]", True)
 
         # Client-side fuzzy filters: category + has_attachments. Iterate,
         # build each summary, keep it only if it passes, stop at count.
@@ -315,6 +345,21 @@ class WindowsOutlookClient(OutlookClientBase):
             if len(results) >= count:
                 break
         return results
+
+    @staticmethod
+    def _scan_for_text(items, query: str):
+        """Yield items (in collection order) whose subject or sender name
+        contains `query`, falling back to the body only when those miss
+        (Body is the expensive property to fetch). Stops after
+        MAX_SCAN_ITEMS items have been examined."""
+        for scanned, item in enumerate(items):
+            if scanned >= MAX_SCAN_ITEMS:
+                return
+            if _text_matches(query, getattr(item, "Subject", "") or "",
+                             getattr(item, "SenderName", "") or ""):
+                yield item
+            elif _text_matches(query, getattr(item, "Body", "") or ""):
+                yield item
 
     @_com
     def get_email(self, email_id: str, prefer_html: bool = False) -> dict:
