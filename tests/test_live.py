@@ -93,3 +93,12 @@ def test_get_email_reports_item_type_for_real_inbox_item(client):
         assert "meeting" in detail
     else:
         assert "meeting" not in detail
+
+
+def test_list_emails_offset_pages_do_not_overlap(client):
+    page1 = client.list_emails(folder="inbox", count=5)
+    page2 = client.list_emails(folder="inbox", count=5, offset=5)
+    both = client.list_emails(folder="inbox", count=10)
+
+    assert not {e["id"] for e in page1} & {e["id"] for e in page2}
+    assert [e["id"] for e in page1 + page2] == [e["id"] for e in both]

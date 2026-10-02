@@ -36,7 +36,8 @@ def test_list_emails_passes_arguments(fake_client):
                          "query": None, "sender": None, "category": None,
                          "received_after": None, "received_before": None,
                          "since_days": None, "has_attachments": None,
-                         "flagged": False, "high_importance": False})
+                         "flagged": False, "high_importance": False,
+                         "offset": 0})
     ]
 
 
@@ -47,8 +48,16 @@ def test_list_emails_defaults(fake_client):
                          "query": None, "sender": None, "category": None,
                          "received_after": None, "received_before": None,
                          "since_days": None, "has_attachments": None,
-                         "flagged": False, "high_importance": False})
+                         "flagged": False, "high_importance": False,
+                         "offset": 0})
     ]
+
+
+def test_list_emails_forwards_offset(fake_client):
+    call_tool("list_emails", {"count": 20, "offset": 40})
+    name, kwargs = fake_client.calls[0]
+    assert kwargs["count"] == 20
+    assert kwargs["offset"] == 40
 
 
 def test_list_emails_returns_categories(fake_client):

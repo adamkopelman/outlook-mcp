@@ -61,21 +61,23 @@ def list_emails(folder: str = "inbox", count: int = 10,
                 received_before: Optional[str] = None,
                 since_days: Optional[int] = None,
                 has_attachments: Optional[bool] = None,
-                flagged: bool = False, high_importance: bool = False):
+                flagged: bool = False, high_importance: bool = False,
+                offset: int = 0):
     """Find emails in a folder with optional text query and filters.
     `folder` accepts a well-known name (inbox, sent, drafts, deleted, outbox)
-    or a path like 'Inbox/Receipts'. `count` is capped at 50. `query`
+    or a path like 'Inbox/Receipts'. Results are newest first. `query`
     searches subject/sender/body text. `sender` matches sender name or
     address. `category` filters by color category. `received_after`/
     `received_before` are ISO dates; `since_days` is a relative alternative.
     `has_attachments`, `flagged`, `high_importance` are optional boolean
-    filters."""
+    filters. `count` is capped at 200. To page, call again with `offset`
+    += count until fewer than `count` results come back."""
     return get_client().list_emails(
         folder=folder, count=count, unread_only=unread_only, query=query,
         sender=sender, category=category, received_after=received_after,
         received_before=received_before, since_days=since_days,
         has_attachments=has_attachments, flagged=flagged,
-        high_importance=high_importance)
+        high_importance=high_importance, offset=offset)
 
 
 @mcp.tool()

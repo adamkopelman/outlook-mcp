@@ -23,7 +23,7 @@ from outlook_mcp import friendly
 from outlook_mcp.errors import ToolError, format_com_error
 from outlook_mcp.outlook.base import OutlookClientBase
 
-MAX_EMAIL_COUNT = 50
+MAX_EMAIL_COUNT = 200
 MAX_CALENDAR_ITEMS = 250
 MAX_BODY_CHARS = 100_000
 
@@ -257,9 +257,11 @@ class WindowsOutlookClient(OutlookClientBase):
                     received_before: Optional[str] = None,
                     since_days: Optional[int] = None,
                     has_attachments: Optional[bool] = None,
-                    flagged: bool = False, high_importance: bool = False) -> list:
+                    flagged: bool = False, high_importance: bool = False,
+                    offset: int = 0) -> list:
         _, ns = self._mapi()
         count = max(1, min(int(count), MAX_EMAIL_COUNT))
+        offset = max(0, int(offset))
         items = self._resolve_folder(ns, folder).Items
 
         # Text query: DASL @SQL across subject/sender/body (escaped).
@@ -301,8 +303,10 @@ class WindowsOutlookClient(OutlookClientBase):
 
         # Client-side fuzzy filters: category + has_attachments. Iterate,
         # build each summary, keep it only if it passes, stop at count.
+        # `offset` skips matches *after* these filters, so pages line up.
         cat_want = category.lower() if category else None
         results = []
+        skipped = 0
         for item in items:
             summary = self._email_summary(item)
             if cat_want is not None:
@@ -311,6 +315,9 @@ class WindowsOutlookClient(OutlookClientBase):
             if has_attachments is not None:
                 if summary["has_attachments"] != has_attachments:
                     continue
+            if skipped < offset:
+                skipped += 1
+                continue
             results.append(summary)
             if len(results) >= count:
                 break

@@ -89,7 +89,7 @@ claude mcp add outlook -- outlook-mcp
 | Tool | Description |
 | --- | --- |
 | `list_folders` | List mail folders with item/unread counts |
-| `list_emails` | Recent emails in a folder (newest first, `unread_only` option) |
+| `list_emails` | Recent emails in a folder (newest first, `unread_only` option; `count` up to 200, page with `offset`) |
 | `search_emails` | Search subject/sender/body, optional `since_days` window |
 | `get_email` | Full email by id (body, recipients, attachment names) |
 | `send_email` | **Send immediately** (to/cc/bcc, plain or HTML body) |

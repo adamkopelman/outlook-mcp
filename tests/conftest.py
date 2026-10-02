@@ -1,3 +1,4 @@
+from tests import com_fakes  # noqa: F401  (installs COM stubs off Windows)
 from typing import Optional
 
 import pytest
@@ -33,13 +34,13 @@ class FakeOutlookClient(OutlookClientBase):
                     query=None, sender=None, category=None,
                     received_after=None, received_before=None,
                     since_days=None, has_attachments=None,
-                    flagged=False, high_importance=False):
+                    flagged=False, high_importance=False, offset=0):
         self._record("list_emails", folder=folder, count=count,
                      unread_only=unread_only, query=query, sender=sender,
                      category=category, received_after=received_after,
                      received_before=received_before, since_days=since_days,
                      has_attachments=has_attachments, flagged=flagged,
-                     high_importance=high_importance)
+                     high_importance=high_importance, offset=offset)
         return [{"id": EMAIL_ID, "subject": "Hello", "sender": "Ada",
                  "unread": True, "categories": ["Work"]}]
 

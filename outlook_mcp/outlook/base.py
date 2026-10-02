@@ -26,7 +26,8 @@ class OutlookClientBase:
                     received_before: Optional[str] = None,
                     since_days: Optional[int] = None,
                     has_attachments: Optional[bool] = None,
-                    flagged: bool = False, high_importance: bool = False) -> list:
+                    flagged: bool = False, high_importance: bool = False,
+                    offset: int = 0) -> list:
         raise NotImplementedError
 
     def get_email(self, email_id: str, prefer_html: bool = False) -> dict:
