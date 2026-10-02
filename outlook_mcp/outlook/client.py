@@ -9,6 +9,7 @@ Every public method:
 """
 
 import functools
+import mimetypes
 import os
 import re
 from datetime import date, datetime, time, timedelta
@@ -113,6 +114,51 @@ def _attach_files(item, paths: list) -> None:
             raise ToolError(f"attachment not found: {p}")
     for p in paths:
         item.Attachments.Add(p)
+
+
+def _get_prop(owner, schema: str):
+    """Read a MAPI property via owner.PropertyAccessor. Returns None when
+    the property is absent (Outlook raises com_error) or the object has no
+    PropertyAccessor."""
+    try:
+        return owner.PropertyAccessor.GetProperty(schema)
+    except (pywintypes.com_error, AttributeError):
+        return None
+
+
+def _clean_content_id(raw) -> Optional[str]:
+    """Normalize a Content-ID: strip whitespace and surrounding <>, so it
+    matches the `cid:` references in an HTML body. Empty -> None."""
+    if not raw:
+        return None
+    cleaned = str(raw).strip()
+    if cleaned.startswith("<") and cleaned.endswith(">"):
+        cleaned = cleaned[1:-1].strip()
+    return cleaned or None
+
+
+def _guess_mime(mime_tag, filename: str) -> Optional[str]:
+    """Prefer the attachment's own MIME tag; otherwise guess from the file
+    extension. None if neither yields anything."""
+    if mime_tag and str(mime_tag).strip():
+        return str(mime_tag).strip().lower()
+    return mimetypes.guess_type(filename or "")[0]
+
+
+def _attachment_info(att, index: int) -> dict:
+    """Metadata for one attachment (index is COM's 1-based position).
+    Shared by list_attachments / save_attachments."""
+    filename = getattr(att, "FileName", "") or ""
+    att_type = getattr(att, "Type", c.OL_BY_VALUE)
+    return {
+        "index": index,
+        "filename": filename,
+        "size": getattr(att, "Size", 0) or 0,
+        "type": c.ATTACHMENT_TYPE_NAMES.get(att_type, "unknown"),
+        "content_id": _clean_content_id(_get_prop(att, c.PR_ATTACH_CONTENT_ID)),
+        "mime_type": _guess_mime(_get_prop(att, c.PR_ATTACH_MIME_TAG), filename),
+        "hidden": bool(_get_prop(att, c.PR_ATTACHMENT_HIDDEN)),
+    }
 
 
 class WindowsOutlookClient(OutlookClientBase):
@@ -607,12 +653,7 @@ class WindowsOutlookClient(OutlookClientBase):
         results = []
         if attachments:
             for i in range(1, attachments.Count + 1):  # COM is 1-based
-                att = attachments.Item(i)
-                results.append({
-                    "index": i,
-                    "filename": getattr(att, "FileName", "") or "",
-                    "size": getattr(att, "Size", 0),
-                })
+                results.append(_attachment_info(attachments.Item(i), i))
         return results
 
     @_com
@@ -629,16 +670,17 @@ class WindowsOutlookClient(OutlookClientBase):
         results = []
         for i in range(1, attachments.Count + 1):
             att = attachments.Item(i)
-            filename = getattr(att, "FileName", "") or f"attachment-{i}"
+            info = _attachment_info(att, i)
+            filename = info["filename"] or f"attachment-{i}"
             if wanted is not None and filename.lower() not in wanted:
                 continue
+            info["filename"] = filename
             target = os.path.join(save_dir, _safe_filename(filename))
             try:
                 att.SaveAsFile(target)
-                results.append({"filename": filename, "saved_to": target,
-                                "status": "saved"})
+                results.append({**info, "saved_to": target, "status": "saved"})
             except pywintypes.com_error as exc:
-                results.append({"filename": filename, "status": "failed",
+                results.append({**info, "status": "failed",
                                 "error": format_com_error(exc)})
         if not results:
             raise ToolError(

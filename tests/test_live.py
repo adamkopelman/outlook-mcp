@@ -71,6 +71,29 @@ def test_create_draft_with_attachment_round_trips(client, tmp_path):
         client.delete_email(created["id"])
 
 
+def test_list_attachments_returns_metadata_on_a_real_draft(client, tmp_path):
+    path = tmp_path / "outlook-mcp-live-meta.txt"
+    path.write_text("live attachment metadata test")
+    created = client.create_draft(
+        to=["nobody@example.invalid"],
+        subject="outlook-mcp attachment metadata test",
+        body="see attached",
+        attachments=[str(path)],
+    )
+    try:
+        [info] = client.list_attachments(created["id"])
+        assert set(info) >= {"index", "filename", "size", "type",
+                             "content_id", "mime_type", "hidden"}
+        assert info["index"] == 1
+        assert info["filename"] == "outlook-mcp-live-meta.txt"
+        assert info["type"] == "file"
+        assert info["mime_type"] == "text/plain"
+        assert info["hidden"] is False
+        assert info["size"] > 0
+    finally:
+        client.delete_email(created["id"])
+
+
 def test_send_with_missing_attachment_errors_before_sending(client):
     from outlook_mcp.errors import ToolError
 

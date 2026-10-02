@@ -187,13 +187,31 @@ def test_list_attachments(fake_client):
     assert result_json(content)["filename"] == "report.pdf"
 
 
+def test_list_attachments_passes_metadata_through(fake_client):
+    content = call_tool("list_attachments", {"email_id": EMAIL_ID})
+    pdf, logo = (json.loads(part.text) for part in content)
+    assert pdf["mime_type"] == "application/pdf"
+    assert pdf["content_id"] is None
+    assert pdf["type"] == "file"
+    assert logo["content_id"] == "logo@01D9"
+    assert logo["mime_type"] == "image/png"
+    assert logo["hidden"] is True
+    assert logo["size"] == 512
+
+
 def test_save_attachments(fake_client):
-    call_tool("save_attachments", {"email_id": EMAIL_ID,
-                                   "save_dir": "/tmp/x",
-                                   "attachment_names": ["report.pdf"]})
+    content = call_tool("save_attachments", {"email_id": EMAIL_ID,
+                                             "save_dir": "/tmp/x",
+                                             "attachment_names": ["report.pdf"]})
     name, kwargs = fake_client.calls[0]
     assert kwargs["save_dir"] == "/tmp/x"
     assert kwargs["attachment_names"] == ["report.pdf"]
+    saved = result_json(content)
+    assert saved["status"] == "saved"
+    assert saved["index"] == 1
+    assert saved["size"] == 1234
+    assert saved["mime_type"] == "application/pdf"
+    assert "content_id" in saved
 
 
 # ---- Tasks ----------------------------------------------------------

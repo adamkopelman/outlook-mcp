@@ -77,6 +77,26 @@ OL_RESPONSE_ACCEPTED = 3
 OL_RESPONSE_DECLINED = 4
 OL_RESPONSE_NOT_RESPONDED = 5
 
+# OlAttachmentType (Attachment.Type)
+OL_BY_VALUE = 1
+OL_BY_REFERENCE = 4
+OL_EMBEDDED_ITEM = 5
+OL_OLE = 6
+
+# Friendly names for attachment types returned by tools.
+ATTACHMENT_TYPE_NAMES = {
+    OL_BY_VALUE: "file",
+    OL_BY_REFERENCE: "link",
+    OL_EMBEDDED_ITEM: "item",
+    OL_OLE: "ole",
+}
+
+# MAPI attachment properties, read via Attachment.PropertyAccessor
+# (DASL proptag schema names; 001F = PT_UNICODE, 000B = PT_BOOLEAN).
+PR_ATTACH_CONTENT_ID = "http://schemas.microsoft.com/mapi/proptag/0x3712001F"
+PR_ATTACH_MIME_TAG = "http://schemas.microsoft.com/mapi/proptag/0x370E001F"
+PR_ATTACHMENT_HIDDEN = "http://schemas.microsoft.com/mapi/proptag/0x7FFE000B"
+
 # Friendly folder names accepted by tools, mapped to default folder ids.
 FOLDER_NAME_TO_ID = {
     "inbox": OL_FOLDER_INBOX,

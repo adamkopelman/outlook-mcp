@@ -1,3 +1,4 @@
+from tests import com_fakes  # noqa: F401  (installs COM stubs off Windows)
 from typing import Optional
 
 import pytest
@@ -124,13 +125,20 @@ class FakeOutlookClient(OutlookClientBase):
     # Attachments
     def list_attachments(self, email_id):
         self._record("list_attachments", email_id=email_id)
-        return [{"index": 1, "filename": "report.pdf", "size": 1234}]
+        return [{"index": 1, "filename": "report.pdf", "size": 1234,
+                 "type": "file", "content_id": None,
+                 "mime_type": "application/pdf", "hidden": False},
+                {"index": 2, "filename": "logo.png", "size": 512,
+                 "type": "file", "content_id": "logo@01D9",
+                 "mime_type": "image/png", "hidden": True}]
 
     def save_attachments(self, email_id, save_dir, attachment_names=None):
         self._record("save_attachments", email_id=email_id, save_dir=save_dir,
                      attachment_names=attachment_names)
-        return [{"filename": "report.pdf", "saved_to": save_dir,
-                 "status": "saved"}]
+        return [{"index": 1, "filename": "report.pdf", "size": 1234,
+                 "type": "file", "content_id": None,
+                 "mime_type": "application/pdf", "hidden": False,
+                 "saved_to": save_dir, "status": "saved"}]
 
     # Tasks
     def list_tasks(self, include_completed=False):

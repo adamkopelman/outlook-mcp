@@ -101,8 +101,8 @@ claude mcp add outlook -- outlook-mcp
 | `get_event` | Full event details including attendees |
 | `create_event` | Create an appointment — adding `attendees` sends invites |
 | `respond_to_meeting` | Accept / decline / tentative a meeting invite |
-| `list_attachments` | List an email's attachments |
-| `save_attachments` | Save attachments to a local directory |
+| `list_attachments` | List an email's attachments (size, type, MIME type, Content-ID, hidden) |
+| `save_attachments` | Save attachments to a local directory (results include the same metadata) |
 | `list_tasks` | List tasks (open only by default) |
 | `create_task` | Create a task with due date and importance |
 | `complete_task` | Mark a task complete |

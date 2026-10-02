@@ -193,7 +193,11 @@ def respond_to_meeting(event_id: str, response: str,
 
 @mcp.tool()
 def list_attachments(email_id: str):
-    """List an email's attachments (file names and sizes)."""
+    """List an email's attachments. Each entry has `index`, `filename`,
+    `size` (bytes), `type` ("file", "link", "item" or "ole"),
+    `content_id` (the Content-ID an HTML body references as `cid:...`,
+    or null), `mime_type` (from the attachment, else guessed from the
+    extension; may be null) and `hidden`."""
     return get_client().list_attachments(email_id=email_id)
 
 
@@ -202,7 +206,9 @@ def save_attachments(email_id: str, save_dir: str,
                      attachment_names: Optional[list[str]] = None):
     """Save an email's attachments to a local directory (created if
     missing). By default saves all attachments; pass `attachment_names`
-    to save only specific files."""
+    to save only specific files. Each result carries the same metadata as
+    `list_attachments` plus `saved_to` and `status` ("saved" or "failed",
+    with `error`)."""
     return get_client().save_attachments(email_id=email_id, save_dir=save_dir,
                                          attachment_names=attachment_names)
 
