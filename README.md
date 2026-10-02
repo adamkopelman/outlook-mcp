@@ -92,8 +92,8 @@ claude mcp add outlook -- outlook-mcp
 | `list_emails` | Recent emails in a folder (newest first, `unread_only` option) |
 | `search_emails` | Search subject/sender/body, optional `since_days` window |
 | `get_email` | Full email by id (body, recipients, attachment names) |
-| `send_email` | **Send immediately** (to/cc/bcc, plain or HTML body) |
-| `create_draft` | Compose and save to Drafts without sending |
+| `send_email` | **Send immediately** (to/cc/bcc, plain or HTML body, file attachments, inline images) |
+| `create_draft` | Compose and save to Drafts without sending (same options as `send_email`) |
 | `reply_email` | Reply / reply-all (send, or save as draft with `send=false`) |
 | `update_email` | Move, mark read/unread, flag, add/remove categories, or set importance on an email |
 | `delete_email` | Move an email to Deleted Items |
@@ -113,6 +113,26 @@ claude mcp add outlook -- outlook-mcp
 Items are addressed by an opaque `id` returned from list/search tools.
 **Ids change when an item moves folders** — `update_email` returns the new id,
 and a stale id produces a clear "item not found" error.
+
+### Inline images
+
+`send_email` and `create_draft` accept `inline_images` to embed images as
+real Content-ID attachments rather than base64 inside the HTML string. This
+requires `html: true`. Each entry has a `content_id` and either a local
+`path` or `data_base64` (a `data:image/png;base64,` prefix is accepted).
+`filename` and `mime_type` are optional. Reference each image in the body
+as `<img src="cid:CONTENT_ID">`:
+
+```json
+{
+  "to": ["ada@example.com"], "subject": "Q3", "html": true,
+  "body": "<p>Results:</p><img src=\"cid:chart\">",
+  "inline_images": [{"content_id": "chart", "path": "C:/reports/q3.png"}]
+}
+```
+
+All entries are validated before anything is sent or saved. Base64 data is
+written to a temp file for `Attachments.Add` and deleted afterwards.
 
 ## Security notes
 

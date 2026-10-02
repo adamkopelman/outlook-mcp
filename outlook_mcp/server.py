@@ -12,6 +12,7 @@ import sys
 from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 from outlook_mcp.outlook.base import OutlookClientBase, UnavailableClient
 
@@ -86,29 +87,64 @@ def get_email(email_id: str, prefer_html: bool = False):
     return get_client().get_email(email_id=email_id, prefer_html=prefer_html)
 
 
+class InlineImage(BaseModel):
+    """An image embedded in an HTML body as a Content-ID attachment."""
+
+    content_id: str = Field(description=(
+        "Content-ID the HTML body references as <img src=\"cid:CONTENT_ID\">, "
+        "e.g. 'logo'."))
+    path: Optional[str] = Field(default=None, description=(
+        "Local image file path. Give exactly one of path or data_base64."))
+    data_base64: Optional[str] = Field(default=None, description=(
+        "Base64-encoded image bytes (a 'data:image/png;base64,' prefix is "
+        "accepted). Give exactly one of path or data_base64."))
+    filename: Optional[str] = Field(default=None, description=(
+        "Attachment file name; defaults to the path's name or CONTENT_ID "
+        "plus an extension."))
+    mime_type: Optional[str] = Field(default=None, description=(
+        "MIME type like 'image/png'; guessed from the file name or data "
+        "when omitted."))
+
+
+def _inline_images_arg(inline_images: Optional[list[InlineImage]]):
+    if inline_images is None:
+        return None
+    return [img.model_dump() for img in inline_images]
+
+
 @mcp.tool()
 def send_email(to: list[str], subject: str, body: str,
                cc: Optional[list[str]] = None,
                bcc: Optional[list[str]] = None, html: bool = False,
-               attachments: Optional[list[str]] = None):
+               attachments: Optional[list[str]] = None,
+               inline_images: Optional[list[InlineImage]] = None):
     """Send an email immediately as the signed-in Outlook user. Use
     create_draft instead if the user should review before sending.
     Set `html` to true if `body` is HTML. `attachments` is a list of local
-    file paths; a missing path fails before anything is sent."""
+    file paths; a missing path fails before anything is sent.
+    `inline_images` embeds images as Content-ID attachments (requires
+    html=true): reference each in the HTML body as
+    <img src="cid:CONTENT_ID"> instead of inlining base64 in the HTML."""
     return get_client().send_email(to=to, subject=subject, body=body, cc=cc,
-                                   bcc=bcc, html=html, attachments=attachments)
+                                   bcc=bcc, html=html, attachments=attachments,
+                                   inline_images=_inline_images_arg(inline_images))
 
 
 @mcp.tool()
 def create_draft(to: list[str], subject: str, body: str,
                  cc: Optional[list[str]] = None,
                  bcc: Optional[list[str]] = None, html: bool = False,
-                 attachments: Optional[list[str]] = None):
+                 attachments: Optional[list[str]] = None,
+                 inline_images: Optional[list[InlineImage]] = None):
     """Compose an email and save it to Drafts without sending. Returns the
     draft's id. `attachments` is a list of local file paths; a missing path
-    fails before saving."""
+    fails before saving. `inline_images` embeds images (local path or
+    base64) as Content-ID attachments (requires html=true): reference each
+    in the HTML body as <img src="cid:CONTENT_ID"> instead of inlining
+    base64 in the HTML."""
     return get_client().create_draft(to=to, subject=subject, body=body, cc=cc,
-                                     bcc=bcc, html=html, attachments=attachments)
+                                     bcc=bcc, html=html, attachments=attachments,
+                                     inline_images=_inline_images_arg(inline_images))
 
 
 @mcp.tool()

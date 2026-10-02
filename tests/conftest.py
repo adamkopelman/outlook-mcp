@@ -1,3 +1,4 @@
+from tests import com_fakes  # noqa: F401  (installs COM stubs off Windows)
 from typing import Optional
 
 import pytest
@@ -49,15 +50,17 @@ class FakeOutlookClient(OutlookClientBase):
                 "categories": [], "item_type": "email", "is_meeting": False}
 
     def send_email(self, to, subject, body, cc=None, bcc=None, html=False,
-                   attachments=None):
+                   attachments=None, inline_images=None):
         self._record("send_email", to=to, subject=subject, body=body, cc=cc,
-                     bcc=bcc, html=html, attachments=attachments)
+                     bcc=bcc, html=html, attachments=attachments,
+                     inline_images=inline_images)
         return {"status": "sent", "to": "; ".join(to), "subject": subject}
 
     def create_draft(self, to, subject, body, cc=None, bcc=None, html=False,
-                     attachments=None):
+                     attachments=None, inline_images=None):
         self._record("create_draft", to=to, subject=subject, body=body,
-                     cc=cc, bcc=bcc, html=html, attachments=attachments)
+                     cc=cc, bcc=bcc, html=html, attachments=attachments,
+                     inline_images=inline_images)
         return {"status": "draft_saved", "id": EMAIL_ID, "subject": subject}
 
     def reply_email(self, email_id, body, reply_all=False, html=False,

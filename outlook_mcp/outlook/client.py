@@ -8,9 +8,14 @@ Every public method:
   * converts pywintypes.com_error into ToolError with a readable message.
 """
 
+import base64
+import binascii
 import functools
+import mimetypes
 import os
 import re
+import shutil
+import tempfile
 from datetime import date, datetime, time, timedelta
 from typing import Optional
 
@@ -113,6 +118,130 @@ def _attach_files(item, paths: list) -> None:
             raise ToolError(f"attachment not found: {p}")
     for p in paths:
         item.Attachments.Add(p)
+
+
+# Magic-number sniffing for base64 images given without filename/mime_type.
+_IMAGE_SIGNATURES = (
+    (b"\x89PNG\r\n\x1a\n", "image/png"),
+    (b"\xff\xd8\xff", "image/jpeg"),
+    (b"GIF87a", "image/gif"),
+    (b"GIF89a", "image/gif"),
+)
+
+
+def _sniff_mime(data: bytes) -> Optional[str]:
+    for signature, mime in _IMAGE_SIGNATURES:
+        if data.startswith(signature):
+            return mime
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
+def _normalize_content_id(raw) -> str:
+    """'<cid:logo>' / 'cid:logo' / 'logo' -> 'logo'."""
+    cid = (raw or "").strip()
+    if cid.startswith("<") and cid.endswith(">"):
+        cid = cid[1:-1].strip()
+    if cid.lower().startswith("cid:"):
+        cid = cid[4:].strip()
+    return cid
+
+
+def _decode_base64(raw: str, cid: str) -> bytes:
+    """Decode base64 image data, accepting an optional
+    'data:<mime>;base64,' prefix and embedded whitespace/newlines."""
+    text = raw.strip()
+    if text.lower().startswith("data:"):
+        header, sep, text = text.partition(",")
+        if not sep or ";base64" not in header.lower():
+            raise ToolError(f"inline image {cid!r}: data URI must be base64-encoded")
+    text = "".join(text.split())
+    try:
+        data = base64.b64decode(text, validate=True)
+    except (binascii.Error, ValueError):
+        raise ToolError(f"inline image {cid!r}: data_base64 is not valid base64")
+    if not data:
+        raise ToolError(f"inline image {cid!r}: data_base64 is empty")
+    return data
+
+
+def _validate_inline_images(images: list, html: bool) -> list:
+    """Validate every inline image spec FIRST (so a bad one fails before
+    anything is created, sent or saved) and normalize it to
+    {content_id, path|data, filename, mime_type}. Each input is a dict with
+    content_id plus exactly one of path / data_base64, and optional
+    filename / mime_type."""
+    if not html:
+        raise ToolError("inline_images requires html=true (reference them in the "
+                        "HTML body as <img src=\"cid:CONTENT_ID\">).")
+    specs, seen = [], set()
+    for img in images:
+        cid = _normalize_content_id(img.get("content_id"))
+        if not cid:
+            raise ToolError("inline image is missing a content_id")
+        if cid.lower() in seen:
+            raise ToolError(f"duplicate inline image content_id: {cid!r}")
+        seen.add(cid.lower())
+        path, data_b64 = img.get("path"), img.get("data_base64")
+        if bool(path) == bool(data_b64):
+            raise ToolError(f"inline image {cid!r}: give exactly one of "
+                            f"'path' or 'data_base64'")
+        spec = {"content_id": cid, "path": None, "data": None,
+                "filename": img.get("filename"), "mime_type": img.get("mime_type")}
+        if path:
+            if not os.path.isfile(path):
+                raise ToolError(f"inline image not found: {path}")
+            spec["path"] = path
+            spec["filename"] = spec["filename"] or os.path.basename(path)
+        else:
+            spec["data"] = _decode_base64(data_b64, cid)
+        if not spec["mime_type"]:
+            guessed = mimetypes.guess_type(spec["filename"] or "")[0]
+            if not guessed and spec["data"] is not None:
+                guessed = _sniff_mime(spec["data"])
+            spec["mime_type"] = guessed or "application/octet-stream"
+        if not spec["filename"]:
+            spec["filename"] = cid + (mimetypes.guess_extension(spec["mime_type"]) or "")
+        spec["filename"] = _safe_filename(spec["filename"])
+        specs.append(spec)
+    return specs
+
+
+def _attach_inline_images(item, specs: list) -> list:
+    """Attach validated inline images (from _validate_inline_images) as
+    hidden Content-ID attachments the HTML body can reference via
+    cid:CONTENT_ID. Base64 data is written to a temp dir first, since
+    Attachments.Add only takes a file path. Returns the temp dirs, which
+    the caller must remove (after Save/Send) with _cleanup_temp_dirs."""
+    temp_dirs = []
+    try:
+        for i, spec in enumerate(specs):
+            path = spec["path"]
+            if path is None:
+                if not temp_dirs:
+                    temp_dirs.append(tempfile.mkdtemp(prefix="outlook-mcp-inline-"))
+                # One subdir per image so equal filenames can't collide.
+                img_dir = os.path.join(temp_dirs[0], str(i))
+                os.mkdir(img_dir)
+                path = os.path.join(img_dir, spec["filename"])
+                with open(path, "wb") as fh:
+                    fh.write(spec["data"])
+            # Position 0: don't render an attachment icon in the body.
+            att = item.Attachments.Add(path, c.OL_BY_VALUE, 0, spec["filename"])
+            pa = att.PropertyAccessor
+            pa.SetProperty(c.PR_ATTACH_CONTENT_ID, spec["content_id"])
+            pa.SetProperty(c.PR_ATTACH_MIME_TAG, spec["mime_type"])
+            pa.SetProperty(c.PR_ATTACHMENT_HIDDEN, True)
+    except BaseException:
+        _cleanup_temp_dirs(temp_dirs)
+        raise
+    return temp_dirs
+
+
+def _cleanup_temp_dirs(dirs: list) -> None:
+    for d in dirs:
+        shutil.rmtree(d, ignore_errors=True)
 
 
 class WindowsOutlookClient(OutlookClientBase):
@@ -376,25 +505,39 @@ class WindowsOutlookClient(OutlookClientBase):
     @_com
     def send_email(self, to: list, subject: str, body: str,
                    cc: Optional[list] = None, bcc: Optional[list] = None,
-                   html: bool = False, attachments: Optional[list] = None) -> dict:
+                   html: bool = False, attachments: Optional[list] = None,
+                   inline_images: Optional[list] = None) -> dict:
         if not to:
             raise ToolError("send_email requires at least one recipient in 'to'.")
+        specs = _validate_inline_images(inline_images, html) if inline_images else []
         app, _ = self._mapi()
         mail = self._compose(app, to, subject, body, cc, bcc, html)
         if attachments:
             _attach_files(mail, attachments)
-        mail.Send()
+        temp_dirs = []
+        try:
+            temp_dirs = _attach_inline_images(mail, specs)
+            mail.Send()
+        finally:
+            _cleanup_temp_dirs(temp_dirs)
         return {"status": "sent", "to": "; ".join(to), "subject": subject}
 
     @_com
     def create_draft(self, to: list, subject: str, body: str,
                      cc: Optional[list] = None, bcc: Optional[list] = None,
-                     html: bool = False, attachments: Optional[list] = None) -> dict:
+                     html: bool = False, attachments: Optional[list] = None,
+                     inline_images: Optional[list] = None) -> dict:
+        specs = _validate_inline_images(inline_images, html) if inline_images else []
         app, _ = self._mapi()
         mail = self._compose(app, to, subject, body, cc, bcc, html)
         if attachments:
             _attach_files(mail, attachments)
-        mail.Save()  # Save first so EntryID exists
+        temp_dirs = []
+        try:
+            temp_dirs = _attach_inline_images(mail, specs)
+            mail.Save()  # Save first so EntryID exists
+        finally:
+            _cleanup_temp_dirs(temp_dirs)
         return {"status": "draft_saved", "id": self._make_id(mail),
                 "subject": subject}
 

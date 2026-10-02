@@ -71,6 +71,31 @@ def test_create_draft_with_attachment_round_trips(client, tmp_path):
         client.delete_email(created["id"])
 
 
+def test_create_draft_with_inline_base64_image_sets_content_id(client):
+    from outlook_mcp import constants as c
+
+    # 1x1 transparent PNG.
+    png_b64 = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
+               "YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")
+    created = client.create_draft(
+        to=["nobody@example.invalid"],
+        subject="outlook-mcp inline image test",
+        body='<p>pixel:</p><img src="cid:pixel">',
+        html=True,
+        inline_images=[{"content_id": "pixel", "data_base64": png_b64}],
+    )
+    try:
+        assert created["status"] == "draft_saved"
+        _, ns = client._mapi()
+        item = client._get_item(ns, created["id"])
+        assert item.Attachments.Count == 1
+        att = item.Attachments.Item(1)
+        assert att.PropertyAccessor.GetProperty(c.PR_ATTACH_CONTENT_ID) == "pixel"
+        assert att.PropertyAccessor.GetProperty(c.PR_ATTACH_MIME_TAG) == "image/png"
+    finally:
+        client.delete_email(created["id"])
+
+
 def test_send_with_missing_attachment_errors_before_sending(client):
     from outlook_mcp.errors import ToolError
 

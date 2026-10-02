@@ -77,6 +77,14 @@ OL_RESPONSE_ACCEPTED = 3
 OL_RESPONSE_DECLINED = 4
 OL_RESPONSE_NOT_RESPONDED = 5
 
+# OlAttachmentType (Attachments.Add)
+OL_BY_VALUE = 1
+
+# MAPI attachment properties (PropertyAccessor schema names)
+PR_ATTACH_CONTENT_ID = "http://schemas.microsoft.com/mapi/proptag/0x3712001F"
+PR_ATTACH_MIME_TAG = "http://schemas.microsoft.com/mapi/proptag/0x370E001F"
+PR_ATTACHMENT_HIDDEN = "http://schemas.microsoft.com/mapi/proptag/0x7FFE000B"
+
 # Friendly folder names accepted by tools, mapped to default folder ids.
 FOLDER_NAME_TO_ID = {
     "inbox": OL_FOLDER_INBOX,

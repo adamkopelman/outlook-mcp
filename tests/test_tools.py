@@ -109,6 +109,50 @@ def test_create_draft(fake_client):
     assert result_json(content)["status"] == "draft_saved"
 
 
+def test_create_draft_forwards_inline_images_as_dicts(fake_client):
+    call_tool("create_draft", {
+        "to": ["a@x.com"], "subject": "Hi", "html": True,
+        "body": '<img src="cid:logo">',
+        "inline_images": [
+            {"content_id": "logo", "data_base64": "iVBORw0KGgo="},
+            {"content_id": "chart", "path": "C:/tmp/chart.png",
+             "mime_type": "image/png"},
+        ],
+    })
+    name, kwargs = fake_client.calls[0]
+    assert name == "create_draft"
+    assert kwargs["inline_images"] == [
+        {"content_id": "logo", "path": None, "data_base64": "iVBORw0KGgo=",
+         "filename": None, "mime_type": None},
+        {"content_id": "chart", "path": "C:/tmp/chart.png", "data_base64": None,
+         "filename": None, "mime_type": "image/png"},
+    ]
+
+
+def test_send_email_forwards_inline_images(fake_client):
+    call_tool("send_email", {
+        "to": ["a@x.com"], "subject": "Hi", "body": "<p/>", "html": True,
+        "inline_images": [{"content_id": "logo", "path": "C:/tmp/logo.png"}],
+    })
+    name, kwargs = fake_client.calls[0]
+    assert kwargs["inline_images"][0]["content_id"] == "logo"
+    assert kwargs["inline_images"][0]["path"] == "C:/tmp/logo.png"
+
+
+def test_inline_images_default_to_none(fake_client):
+    call_tool("create_draft", {"to": ["a@x.com"], "subject": "Hi", "body": "x"})
+    assert fake_client.calls[0][1]["inline_images"] is None
+
+
+def test_inline_images_in_schema():
+    tools = {t.name: t for t in asyncio.run(server.mcp.list_tools())}
+    for name in ("create_draft", "send_email"):
+        schema = tools[name].inputSchema
+        assert "inline_images" in schema["properties"]
+        assert "inline_images" not in schema.get("required", [])
+        assert "cid:CONTENT_ID" in tools[name].description
+
+
 def test_reply_email(fake_client):
     call_tool("reply_email", {"email_id": EMAIL_ID, "body": "Thanks!",
                               "reply_all": True, "send": False})
