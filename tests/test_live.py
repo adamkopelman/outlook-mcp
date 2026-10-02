@@ -93,3 +93,13 @@ def test_get_email_reports_item_type_for_real_inbox_item(client):
         assert "meeting" in detail
     else:
         assert "meeting" not in detail
+
+
+def test_get_email_reports_truncation_flags_for_real_inbox_item(client):
+    emails = client.list_emails(folder="inbox", count=1)
+    if not emails:
+        pytest.skip("inbox is empty, nothing to check")
+    detail = client.get_email(emails[0]["id"], prefer_html=True)
+    assert isinstance(detail["body_truncated"], bool)
+    assert isinstance(detail["html_truncated"], bool)
+    assert detail["html_truncated"] == (detail["html_length"] > 100_000)

@@ -29,7 +29,8 @@ class OutlookClientBase:
                     flagged: bool = False, high_importance: bool = False) -> list:
         raise NotImplementedError
 
-    def get_email(self, email_id: str, prefer_html: bool = False) -> dict:
+    def get_email(self, email_id: str, prefer_html: bool = False,
+                  max_body_chars: Optional[int] = None) -> dict:
         raise NotImplementedError
 
     def send_email(self, to: list, subject: str, body: str,

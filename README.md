@@ -91,7 +91,7 @@ claude mcp add outlook -- outlook-mcp
 | `list_folders` | List mail folders with item/unread counts |
 | `list_emails` | Recent emails in a folder (newest first, `unread_only` option) |
 | `search_emails` | Search subject/sender/body, optional `since_days` window |
-| `get_email` | Full email by id (body, recipients, attachment names) |
+| `get_email` | Full email by id (body, recipients, attachment names); reports `body_truncated`/`html_truncated` + full lengths, re-request with larger `max_body_chars` (up to 5,000,000) |
 | `send_email` | **Send immediately** (to/cc/bcc, plain or HTML body) |
 | `create_draft` | Compose and save to Drafts without sending |
 | `reply_email` | Reply / reply-all (send, or save as draft with `send=false`) |

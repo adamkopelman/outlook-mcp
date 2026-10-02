@@ -78,6 +78,22 @@ def test_get_email(fake_client):
     assert result_json(content)["body"] == "Hi there"
 
 
+def test_get_email_max_body_chars_defaults_to_none(fake_client):
+    content = call_tool("get_email", {"email_id": EMAIL_ID})
+    name, kwargs = fake_client.calls[0]
+    assert name == "get_email"
+    assert kwargs["max_body_chars"] is None
+    assert result_json(content)["body_truncated"] is False
+
+
+def test_get_email_forwards_max_body_chars(fake_client):
+    call_tool("get_email", {"email_id": EMAIL_ID, "prefer_html": True,
+                            "max_body_chars": 2_000_000})
+    _, kwargs = fake_client.calls[0]
+    assert kwargs["prefer_html"] is True
+    assert kwargs["max_body_chars"] == 2_000_000
+
+
 def test_get_email_includes_item_type(fake_client):
     content = call_tool("get_email", {"email_id": EMAIL_ID})
     result = result_json(content)

@@ -26,6 +26,10 @@ from outlook_mcp.outlook.base import OutlookClientBase
 MAX_EMAIL_COUNT = 50
 MAX_CALENDAR_ITEMS = 250
 MAX_BODY_CHARS = 100_000
+# Bounds for get_email's caller-chosen max_body_chars (large HTML mail with
+# inline images can run to megabytes).
+MIN_BODY_CHARS_LIMIT = 1_000
+MAX_BODY_CHARS_LIMIT = 5_000_000
 
 _UNSAFE_FILENAME_CHARS = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
 
@@ -70,10 +74,20 @@ def _parse_dt(value: str, field: str) -> datetime:
         )
 
 
-def _truncate(text: str) -> str:
-    if text and len(text) > MAX_BODY_CHARS:
-        return text[:MAX_BODY_CHARS] + f"\n\n[... truncated at {MAX_BODY_CHARS} characters]"
-    return text
+def _truncate(text: str, limit: int = MAX_BODY_CHARS) -> tuple:
+    """Hard-cut text at `limit` chars (may split markup — callers get a flag
+    and can re-request with a larger limit). Returns (text, truncated)."""
+    if text and len(text) > limit:
+        return text[:limit] + f"\n\n[... truncated at {limit} characters]", True
+    return text, False
+
+
+def _clamp_body_limit(max_body_chars: Optional[int]) -> int:
+    """None -> MAX_BODY_CHARS; otherwise clamp into
+    [MIN_BODY_CHARS_LIMIT, MAX_BODY_CHARS_LIMIT]."""
+    if max_body_chars is None:
+        return MAX_BODY_CHARS
+    return max(MIN_BODY_CHARS_LIMIT, min(MAX_BODY_CHARS_LIMIT, int(max_body_chars)))
 
 
 def _safe_filename(name: str) -> str:
@@ -317,15 +331,21 @@ class WindowsOutlookClient(OutlookClientBase):
         return results
 
     @_com
-    def get_email(self, email_id: str, prefer_html: bool = False) -> dict:
+    def get_email(self, email_id: str, prefer_html: bool = False,
+                  max_body_chars: Optional[int] = None) -> dict:
+        limit = _clamp_body_limit(max_body_chars)
         _, ns = self._mapi()
         item = self._get_item(ns, email_id)
         info = self._email_summary(item)
         info["cc"] = getattr(item, "CC", "") or ""
         info["bcc"] = getattr(item, "BCC", "") or ""
-        info["body"] = _truncate(getattr(item, "Body", "") or "")
+        body = getattr(item, "Body", "") or ""
+        info["body"], info["body_truncated"] = _truncate(body, limit)
+        info["body_length"] = len(body)
         if prefer_html:
-            info["html_body"] = _truncate(getattr(item, "HTMLBody", "") or "")
+            html = getattr(item, "HTMLBody", "") or ""
+            info["html_body"], info["html_truncated"] = _truncate(html, limit)
+            info["html_length"] = len(html)
         attachments = getattr(item, "Attachments", None)
         info["attachments"] = (
             [attachments.Item(i).FileName for i in range(1, attachments.Count + 1)]
@@ -531,7 +551,7 @@ class WindowsOutlookClient(OutlookClientBase):
         _, ns = self._mapi()
         item = self._get_item(ns, event_id)
         info = self._event_summary(item)
-        info["body"] = _truncate(getattr(item, "Body", "") or "")
+        info["body"], info["body_truncated"] = _truncate(getattr(item, "Body", "") or "")
         info["required_attendees"] = getattr(item, "RequiredAttendees", "") or ""
         info["optional_attendees"] = getattr(item, "OptionalAttendees", "") or ""
         info["response"] = friendly.response_word(
@@ -698,7 +718,7 @@ class WindowsOutlookClient(OutlookClientBase):
         _, ns = self._mapi()
         note = self._get_item(ns, note_id)
         info = self._note_summary(note)
-        info["body"] = _truncate(getattr(note, "Body", "") or "")
+        info["body"], info["body_truncated"] = _truncate(getattr(note, "Body", "") or "")
         return info
 
     @_com

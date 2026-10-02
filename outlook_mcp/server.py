@@ -79,11 +79,21 @@ def list_emails(folder: str = "inbox", count: int = 10,
 
 
 @mcp.tool()
-def get_email(email_id: str, prefer_html: bool = False):
+def get_email(email_id: str, prefer_html: bool = False,
+              max_body_chars: Optional[int] = None):
     """Read a full email (headers, body, attachment names) by the id
     returned from list_emails. Set `prefer_html` to also get the HTML
-    body."""
-    return get_client().get_email(email_id=email_id, prefer_html=prefer_html)
+    body.
+
+    `body` (and `html_body`) are cut at `max_body_chars` characters
+    (default 100,000; allowed 1,000-5,000,000). The result always reports
+    `body_truncated` and `body_length` (the full original length), plus
+    `html_truncated` and `html_length` when `prefer_html` is set. If a
+    `*_truncated` flag is true, the cut may fall mid-tag or mid-image-data:
+    call again with `max_body_chars` of at least the reported length (up to
+    5,000,000) to get the complete text."""
+    return get_client().get_email(email_id=email_id, prefer_html=prefer_html,
+                                  max_body_chars=max_body_chars)
 
 
 @mcp.tool()
