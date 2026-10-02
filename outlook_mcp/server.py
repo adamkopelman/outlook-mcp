@@ -213,6 +213,18 @@ def save_attachments(email_id: str, save_dir: str,
                                          attachment_names=attachment_names)
 
 
+@mcp.tool()
+def get_inline_image(email_id: str, content_id: str):
+    """Return an email's attachment identified by its Content-ID (the
+    `cid:...` an HTML body references; see `content_id` from
+    `list_attachments`) as a base64 `data_uri`, plus `content_id`,
+    `filename`, `mime_type` and `size` (bytes). A `cid:` prefix and
+    surrounding <> are accepted; matching is case-insensitive. Limited to
+    10 MB; use `save_attachments` for larger files."""
+    return get_client().get_inline_image(email_id=email_id,
+                                         content_id=content_id)
+
+
 # ---- Task tools -----------------------------------------------------
 
 @mcp.tool()

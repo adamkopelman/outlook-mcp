@@ -140,6 +140,13 @@ class FakeOutlookClient(OutlookClientBase):
                  "mime_type": "application/pdf", "hidden": False,
                  "saved_to": save_dir, "status": "saved"}]
 
+    def get_inline_image(self, email_id, content_id):
+        self._record("get_inline_image", email_id=email_id,
+                     content_id=content_id)
+        return {"content_id": "logo@01D9", "filename": "logo.png",
+                "mime_type": "image/png", "size": 4,
+                "data_uri": "data:image/png;base64,iVBORw=="}
+
     # Tasks
     def list_tasks(self, include_completed=False):
         self._record("list_tasks", include_completed=include_completed)

@@ -9,7 +9,7 @@ EXPECTED_TOOLS = {
     # Calendar
     "list_events", "get_event", "create_event", "respond_to_meeting",
     # Attachments
-    "list_attachments", "save_attachments",
+    "list_attachments", "save_attachments", "get_inline_image",
     # Tasks
     "list_tasks", "create_task", "complete_task",
     # Notes

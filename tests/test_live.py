@@ -116,3 +116,27 @@ def test_get_email_reports_item_type_for_real_inbox_item(client):
         assert "meeting" in detail
     else:
         assert "meeting" not in detail
+
+
+def test_get_inline_image_round_trips_a_real_content_id(client):
+    import base64
+
+    for email in client.list_emails(folder="inbox", count=25):
+        try:
+            atts = client.list_attachments(email["id"])
+        except Exception:
+            continue  # e.g. an item type without attachments support
+        att = next((a for a in atts if a["content_id"]
+                    and a["size"] <= 10 * 1024 * 1024), None)
+        if att:
+            break
+    else:
+        pytest.skip("no attachment with a Content-ID in the newest 25 inbox items")
+    image = client.get_inline_image(email["id"], f"cid:{att['content_id']}")
+    assert image["content_id"] == att["content_id"]
+    header, payload = image["data_uri"].split(",", 1)
+    assert header == f"data:{image['mime_type']};base64"
+    data = base64.b64decode(payload)
+    assert len(data) == image["size"] > 0
+    # Attachment.Size is the MAPI size, a bit above the raw payload.
+    assert len(data) <= att["size"]

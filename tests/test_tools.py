@@ -214,6 +214,25 @@ def test_save_attachments(fake_client):
     assert "content_id" in saved
 
 
+def test_get_inline_image(fake_client):
+    content = call_tool("get_inline_image", {"email_id": EMAIL_ID,
+                                             "content_id": "cid:logo@01D9"})
+    assert fake_client.calls == [
+        ("get_inline_image", {"email_id": EMAIL_ID,
+                              "content_id": "cid:logo@01D9"})
+    ]
+    image = result_json(content)
+    assert image["mime_type"] == "image/png"
+    assert image["size"] == 4
+    assert image["data_uri"].startswith("data:image/png;base64,")
+
+
+def test_get_inline_image_requires_content_id(fake_client):
+    with pytest.raises(Exception):
+        call_tool("get_inline_image", {"email_id": EMAIL_ID})
+    assert fake_client.calls == []
+
+
 # ---- Tasks ----------------------------------------------------------
 
 def test_list_tasks(fake_client):

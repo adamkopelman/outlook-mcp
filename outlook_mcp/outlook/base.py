@@ -85,6 +85,9 @@ class OutlookClientBase:
                          attachment_names: Optional[list] = None) -> list:
         raise NotImplementedError
 
+    def get_inline_image(self, email_id: str, content_id: str) -> dict:
+        raise NotImplementedError
+
     # ---- Tasks -----------------------------------------------------
     def list_tasks(self, include_completed: bool = False) -> list:
         raise NotImplementedError

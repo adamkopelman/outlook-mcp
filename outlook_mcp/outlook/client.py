@@ -8,10 +8,13 @@ Every public method:
   * converts pywintypes.com_error into ToolError with a readable message.
 """
 
+import base64
 import functools
 import mimetypes
 import os
 import re
+import shutil
+import tempfile
 from datetime import date, datetime, time, timedelta
 from typing import Optional
 
@@ -27,6 +30,9 @@ from outlook_mcp.outlook.base import OutlookClientBase
 MAX_EMAIL_COUNT = 50
 MAX_CALENDAR_ITEMS = 250
 MAX_BODY_CHARS = 100_000
+# get_inline_image returns the bytes base64-encoded in the tool result;
+# anything bigger belongs on disk via save_attachments.
+MAX_INLINE_IMAGE_BYTES = 10 * 1024 * 1024
 
 _UNSAFE_FILENAME_CHARS = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
 
@@ -143,6 +149,18 @@ def _guess_mime(mime_tag, filename: str) -> Optional[str]:
     if mime_tag and str(mime_tag).strip():
         return str(mime_tag).strip().lower()
     return mimetypes.guess_type(filename or "")[0]
+
+
+def _normalize_cid_request(raw) -> Optional[str]:
+    """Normalize a caller-supplied Content-ID the way an HTML body might
+    spell it: tolerate a leading `cid:` (any case) and surrounding <>.
+    Returns the bare id (compare case-insensitively), or None if empty."""
+    if not raw:
+        return None
+    cleaned = str(raw).strip()
+    if cleaned[:4].lower() == "cid:":
+        cleaned = cleaned[4:]
+    return _clean_content_id(cleaned)
 
 
 def _attachment_info(att, index: int) -> dict:
@@ -688,6 +706,68 @@ class WindowsOutlookClient(OutlookClientBase):
                 "to see the exact file names."
             )
         return results
+
+    @_com
+    def get_inline_image(self, email_id: str, content_id: str) -> dict:
+        wanted = _normalize_cid_request(content_id)
+        if not wanted:
+            raise ToolError("content_id must be a non-empty Content-ID.")
+        _, ns = self._mapi()
+        item = self._get_item(ns, email_id)
+        attachments = getattr(item, "Attachments", None)
+        count = attachments.Count if attachments else 0
+        available = []
+        match = None
+        for i in range(1, count + 1):
+            att = attachments.Item(i)
+            info = _attachment_info(att, i)
+            cid = info["content_id"]
+            if not cid:
+                continue
+            if cid.lower() == wanted.lower():
+                match = (att, info)
+                break
+            available.append(cid)
+        if match is None:
+            if not available:
+                raise ToolError(
+                    f"Content-ID '{wanted}' not found: this email has no "
+                    "attachments with a Content-ID (use list_attachments to "
+                    "see its attachments)."
+                )
+            raise ToolError(
+                f"Content-ID '{wanted}' not found. Available Content-IDs: "
+                + ", ".join(available)
+            )
+        att, info = match
+        too_big = (f"Attachment '{info['filename'] or info['content_id']}' "
+                   f"exceeds the {MAX_INLINE_IMAGE_BYTES // (1024 * 1024)} MB "
+                   "limit for get_inline_image; use save_attachments to save "
+                   "it to disk instead.")
+        # Size is the MAPI attachment size (a little above the payload), so
+        # it only pre-screens; the real byte count is checked after reading.
+        if info["size"] > MAX_INLINE_IMAGE_BYTES:
+            raise ToolError(too_big)
+        tmp_dir = tempfile.mkdtemp(prefix="outlook-mcp-")
+        try:
+            name = info["filename"] or f"attachment-{info['index']}"
+            target = os.path.join(tmp_dir, _safe_filename(name))
+            att.SaveAsFile(target)
+            with open(target, "rb") as fh:
+                data = fh.read()
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        if len(data) > MAX_INLINE_IMAGE_BYTES:
+            raise ToolError(too_big)
+        mime = info["mime_type"] or "application/octet-stream"
+        return {
+            "content_id": info["content_id"],
+            "filename": info["filename"],
+            "mime_type": mime,
+            "size": len(data),
+            "data_uri": f"data:{mime};base64,"
+                        + base64.b64encode(data).decode("ascii"),
+        }
 
     # ---- Tasks ------------------------------------------------------
 
