@@ -1,3 +1,4 @@
+from tests import com_fakes  # noqa: F401  (installs COM stubs off Windows)
 from typing import Optional
 
 import pytest
@@ -94,6 +95,20 @@ class FakeOutlookClient(OutlookClientBase):
         else:
             new_id = email_id
         return {"status": "updated", "id": new_id, "changed": changed}
+
+    def update_draft(self, draft_id, subject=None, body=None, html_body=None,
+                     to=None, cc=None, bcc=None, attachments=None):
+        self._record("update_draft", draft_id=draft_id, subject=subject,
+                     body=body, html_body=html_body, to=to, cc=cc, bcc=bcc,
+                     attachments=attachments)
+        # Mirror the real client's `changed` ordering.
+        fields = [("subject", subject), ("body", body),
+                  ("html_body", html_body), ("to", to), ("cc", cc),
+                  ("bcc", bcc)]
+        changed = [name for name, value in fields if value is not None]
+        if attachments:
+            changed.append("attachments")
+        return {"status": "draft_updated", "id": draft_id, "changed": changed}
 
     def delete_email(self, email_id):
         self._record("delete_email", email_id=email_id)
