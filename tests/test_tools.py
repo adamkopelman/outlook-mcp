@@ -232,6 +232,38 @@ def test_create_note(fake_client):
     assert fake_client.calls == [("create_note", {"body": "Ideas\n- one"})]
 
 
+# ---- Non-ASCII text (issue #5) --------------------------------------
+
+HEBREW_SUBJECT = "מייל שיקוף"
+HEBREW_BODY = "סיכום עשייה"
+HEBREW_SENDER = "ישראל ישראלי"
+
+
+def test_hebrew_round_trips_through_tool_layer(fake_client):
+    fake_client.list_emails = lambda **kwargs: [
+        {"id": EMAIL_ID, "subject": HEBREW_SUBJECT, "sender": HEBREW_SENDER,
+         "unread": True, "categories": []}]
+    fake_client.get_email = lambda **kwargs: {
+        "id": EMAIL_ID, "subject": HEBREW_SUBJECT, "body": HEBREW_BODY,
+        "sender": HEBREW_SENDER, "categories": [], "item_type": "email",
+        "is_meeting": False}
+
+    listed = result_json(call_tool("list_emails", {}))
+    assert listed["subject"] == HEBREW_SUBJECT
+    assert listed["sender"] == HEBREW_SENDER
+
+    email = result_json(call_tool("get_email", {"email_id": EMAIL_ID}))
+    assert (email["subject"], email["body"], email["sender"]) == (
+        HEBREW_SUBJECT, HEBREW_BODY, HEBREW_SENDER)
+
+
+def test_hebrew_arguments_reach_client_intact(fake_client):
+    call_tool("send_email", {"to": ["a@example.com"],
+                             "subject": HEBREW_SUBJECT, "body": HEBREW_BODY})
+    _, kwargs = fake_client.calls[0]
+    assert (kwargs["subject"], kwargs["body"]) == (HEBREW_SUBJECT, HEBREW_BODY)
+
+
 # ---- Error paths ----------------------------------------------------
 
 def test_client_error_propagates_as_tool_error(fake_client):

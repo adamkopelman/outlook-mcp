@@ -251,7 +251,23 @@ def create_note(body: str):
     return get_client().create_note(body=body)
 
 
+def _force_utf8_stdio() -> None:
+    """Make stdin/stdout/stderr UTF-8 regardless of the console code page.
+
+    The mcp SDK's stdio transport already re-wraps stdin/stdout as UTF-8,
+    but stderr (logging) and any stray print() still use the platform
+    encoding when piped -- e.g. cp1252 on Windows, where Hebrew log lines
+    come out as \\u05de escapes and a print() raises. Reconfiguring in
+    place also covers log handlers already holding sys.stderr.
+    """
+    for stream, errors in ((sys.stdin, "strict"), (sys.stdout, "strict"),
+                           (sys.stderr, "backslashreplace")):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors=errors)
+
+
 def main() -> None:
+    _force_utf8_stdio()
     logging.basicConfig(stream=sys.stderr, level=logging.INFO)
     mcp.run()  # stdio transport
 

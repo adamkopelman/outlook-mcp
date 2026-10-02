@@ -138,6 +138,9 @@ and a stale id produces a clear "item not found" error.
 - Date filters use Outlook's JET format internally; if `search_emails` with
   `since_days` misbehaves on a heavily localized system, try without it and
   filter by eye.
+- Non-ASCII text (e.g. Hebrew) is UTF-8 end to end: MCP messages on
+  stdout and log lines on stderr are always UTF-8, whatever the console
+  code page. If a log viewer shows mojibake, read the stream as UTF-8.
 
 ## Development
 
