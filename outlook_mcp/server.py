@@ -82,7 +82,8 @@ def list_emails(folder: str = "inbox", count: int = 10,
 def get_email(email_id: str, prefer_html: bool = False):
     """Read a full email (headers, body, attachment names) by the id
     returned from list_emails. Set `prefer_html` to also get the HTML
-    body."""
+    body. `inline_images` lists the attachments embedded in the HTML body
+    (`index`, `content_id`, `filename`, `mime_type`; empty when none)."""
     return get_client().get_email(email_id=email_id, prefer_html=prefer_html)
 
 
@@ -197,7 +198,8 @@ def list_attachments(email_id: str):
     `size` (bytes), `type` ("file", "link", "item" or "ole"),
     `content_id` (the Content-ID an HTML body references as `cid:...`,
     or null), `mime_type` (from the attachment, else guessed from the
-    extension; may be null) and `hidden`."""
+    extension; may be null), `hidden` and `is_inline` (true for content
+    embedded in the HTML body via `cid:`, false for regular attachments)."""
     return get_client().list_attachments(email_id=email_id)
 
 

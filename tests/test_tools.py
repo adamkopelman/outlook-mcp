@@ -85,6 +85,15 @@ def test_get_email_includes_item_type(fake_client):
     assert result["is_meeting"] is False
 
 
+def test_get_email_includes_inline_images(fake_client):
+    content = call_tool("get_email", {"email_id": EMAIL_ID})
+    result = result_json(content)
+    assert result["attachments"] == ["report.pdf", "logo.png"]
+    assert result["inline_images"] == [{"index": 2, "content_id": "logo@01D9",
+                                        "filename": "logo.png",
+                                        "mime_type": "image/png"}]
+
+
 def test_send_email(fake_client):
     call_tool("send_email", {"to": ["a@example.com", "b@example.com"],
                              "subject": "Hi", "body": "Hello!"})
@@ -197,6 +206,8 @@ def test_list_attachments_passes_metadata_through(fake_client):
     assert logo["mime_type"] == "image/png"
     assert logo["hidden"] is True
     assert logo["size"] == 512
+    assert pdf["is_inline"] is False
+    assert logo["is_inline"] is True
 
 
 def test_save_attachments(fake_client):

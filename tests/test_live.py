@@ -116,3 +116,21 @@ def test_get_email_reports_item_type_for_real_inbox_item(client):
         assert "meeting" in detail
     else:
         assert "meeting" not in detail
+
+
+def test_inline_flag_consistent_on_a_real_inbox_email(client):
+    emails = client.list_emails(folder="inbox", count=25, has_attachments=True)
+    if not emails:
+        pytest.skip("no inbox email with attachments among the newest 25")
+    email_id = emails[0]["id"]
+    infos = client.list_attachments(email_id)
+    for info in infos:
+        assert isinstance(info["is_inline"], bool)
+        if info["is_inline"]:
+            assert info["content_id"]
+    detail = client.get_email(email_id)
+    inline = [i for i in infos if i["is_inline"]]
+    assert detail["inline_images"] == [
+        {k: i[k] for k in ("index", "content_id", "filename", "mime_type")}
+        for i in inline
+    ]

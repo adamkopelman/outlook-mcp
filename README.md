@@ -91,7 +91,7 @@ claude mcp add outlook -- outlook-mcp
 | `list_folders` | List mail folders with item/unread counts |
 | `list_emails` | Recent emails in a folder (newest first, `unread_only` option) |
 | `search_emails` | Search subject/sender/body, optional `since_days` window |
-| `get_email` | Full email by id (body, recipients, attachment names) |
+| `get_email` | Full email by id (body, recipients, attachment names, inline images) |
 | `send_email` | **Send immediately** (to/cc/bcc, plain or HTML body) |
 | `create_draft` | Compose and save to Drafts without sending |
 | `reply_email` | Reply / reply-all (send, or save as draft with `send=false`) |
@@ -101,7 +101,7 @@ claude mcp add outlook -- outlook-mcp
 | `get_event` | Full event details including attendees |
 | `create_event` | Create an appointment — adding `attendees` sends invites |
 | `respond_to_meeting` | Accept / decline / tentative a meeting invite |
-| `list_attachments` | List an email's attachments (size, type, MIME type, Content-ID, hidden) |
+| `list_attachments` | List an email's attachments (size, type, MIME type, Content-ID, hidden, inline vs. regular) |
 | `save_attachments` | Save attachments to a local directory (results include the same metadata) |
 | `list_tasks` | List tasks (open only by default) |
 | `create_task` | Create a task with due date and importance |

@@ -145,12 +145,32 @@ def _guess_mime(mime_tag, filename: str) -> Optional[str]:
     return mimetypes.guess_type(filename or "")[0]
 
 
-def _attachment_info(att, index: int) -> dict:
+def _is_inline(content_id: Optional[str], hidden: bool, html_body: str) -> bool:
+    """Whether an attachment is inline (cid:-referenced) content rather
+    than a standalone attachment. `content_id` is already cleaned of <>.
+
+    Inline when it has a Content-ID and either Outlook marked it hidden
+    or the HTML body references it as `cid:<content_id>` (case-insensitive,
+    whole id). A Content-ID the HTML never references is usually a regular
+    attachment some senders label with a CID anyway; no Content-ID is
+    never inline."""
+    if not content_id:
+        return False
+    if hidden:
+        return True
+    # The reference must end where the id ends, so "cid:img10@x" does not
+    # count as a reference to "img1".
+    pattern = r"cid:" + re.escape(content_id) + r"(?![^\s\"'()<>])"
+    return re.search(pattern, html_body or "", re.IGNORECASE) is not None
+
+
+def _attachment_info(att, index: int, html_body: Optional[str] = None) -> dict:
     """Metadata for one attachment (index is COM's 1-based position).
-    Shared by list_attachments / save_attachments."""
+    Shared by list_attachments / save_attachments / get_email. Pass the
+    item's HTML body to also get `is_inline`."""
     filename = getattr(att, "FileName", "") or ""
     att_type = getattr(att, "Type", c.OL_BY_VALUE)
-    return {
+    info = {
         "index": index,
         "filename": filename,
         "size": getattr(att, "Size", 0) or 0,
@@ -159,6 +179,21 @@ def _attachment_info(att, index: int) -> dict:
         "mime_type": _guess_mime(_get_prop(att, c.PR_ATTACH_MIME_TAG), filename),
         "hidden": bool(_get_prop(att, c.PR_ATTACHMENT_HIDDEN)),
     }
+    if html_body is not None:
+        info["is_inline"] = _is_inline(info["content_id"], info["hidden"],
+                                       html_body)
+    return info
+
+
+def _attachment_infos(item) -> list:
+    """`_attachment_info` (with `is_inline`) for every attachment of an
+    item. HTMLBody is read once, and only when there are attachments."""
+    attachments = getattr(item, "Attachments", None)
+    if not attachments or not attachments.Count:
+        return []
+    html_body = getattr(item, "HTMLBody", "") or ""
+    return [_attachment_info(attachments.Item(i), i, html_body)
+            for i in range(1, attachments.Count + 1)]  # COM is 1-based
 
 
 class WindowsOutlookClient(OutlookClientBase):
@@ -372,11 +407,12 @@ class WindowsOutlookClient(OutlookClientBase):
         info["body"] = _truncate(getattr(item, "Body", "") or "")
         if prefer_html:
             info["html_body"] = _truncate(getattr(item, "HTMLBody", "") or "")
-        attachments = getattr(item, "Attachments", None)
-        info["attachments"] = (
-            [attachments.Item(i).FileName for i in range(1, attachments.Count + 1)]
-            if attachments and attachments.Count else []
-        )
+        att_infos = _attachment_infos(item)
+        info["attachments"] = [a["filename"] for a in att_infos]
+        info["inline_images"] = [
+            {k: a[k] for k in ("index", "content_id", "filename", "mime_type")}
+            for a in att_infos if a["is_inline"]
+        ]
 
         message_class = getattr(item, "MessageClass", "") or ""
         item_type = friendly.item_type_from_class(message_class)
@@ -649,12 +685,7 @@ class WindowsOutlookClient(OutlookClientBase):
     def list_attachments(self, email_id: str) -> list:
         _, ns = self._mapi()
         item = self._get_item(ns, email_id)
-        attachments = getattr(item, "Attachments", None)
-        results = []
-        if attachments:
-            for i in range(1, attachments.Count + 1):  # COM is 1-based
-                results.append(_attachment_info(attachments.Item(i), i))
-        return results
+        return _attachment_infos(item)
 
     @_com
     def save_attachments(self, email_id: str, save_dir: str,
@@ -667,10 +698,11 @@ class WindowsOutlookClient(OutlookClientBase):
         save_dir = os.path.abspath(os.path.expanduser(save_dir))
         os.makedirs(save_dir, exist_ok=True)
         wanted = {n.lower() for n in attachment_names} if attachment_names else None
+        html_body = getattr(item, "HTMLBody", "") or ""
         results = []
         for i in range(1, attachments.Count + 1):
             att = attachments.Item(i)
-            info = _attachment_info(att, i)
+            info = _attachment_info(att, i, html_body)
             filename = info["filename"] or f"attachment-{i}"
             if wanted is not None and filename.lower() not in wanted:
                 continue

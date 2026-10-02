@@ -47,7 +47,11 @@ class FakeOutlookClient(OutlookClientBase):
     def get_email(self, email_id, prefer_html=False):
         self._record("get_email", email_id=email_id, prefer_html=prefer_html)
         return {"id": email_id, "subject": "Hello", "body": "Hi there",
-                "categories": [], "item_type": "email", "is_meeting": False}
+                "categories": [], "item_type": "email", "is_meeting": False,
+                "attachments": ["report.pdf", "logo.png"],
+                "inline_images": [{"index": 2, "content_id": "logo@01D9",
+                                   "filename": "logo.png",
+                                   "mime_type": "image/png"}]}
 
     def send_email(self, to, subject, body, cc=None, bcc=None, html=False,
                    attachments=None):
@@ -127,10 +131,12 @@ class FakeOutlookClient(OutlookClientBase):
         self._record("list_attachments", email_id=email_id)
         return [{"index": 1, "filename": "report.pdf", "size": 1234,
                  "type": "file", "content_id": None,
-                 "mime_type": "application/pdf", "hidden": False},
+                 "mime_type": "application/pdf", "hidden": False,
+                 "is_inline": False},
                 {"index": 2, "filename": "logo.png", "size": 512,
                  "type": "file", "content_id": "logo@01D9",
-                 "mime_type": "image/png", "hidden": True}]
+                 "mime_type": "image/png", "hidden": True,
+                 "is_inline": True}]
 
     def save_attachments(self, email_id, save_dir, attachment_names=None):
         self._record("save_attachments", email_id=email_id, save_dir=save_dir,
@@ -138,7 +144,7 @@ class FakeOutlookClient(OutlookClientBase):
         return [{"index": 1, "filename": "report.pdf", "size": 1234,
                  "type": "file", "content_id": None,
                  "mime_type": "application/pdf", "hidden": False,
-                 "saved_to": save_dir, "status": "saved"}]
+                 "is_inline": False, "saved_to": save_dir, "status": "saved"}]
 
     # Tasks
     def list_tasks(self, include_completed=False):
